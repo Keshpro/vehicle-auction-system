@@ -1,17 +1,25 @@
-# Vehicle Auction Backend
+# Vehicle Auction & Bidding Management System — ASP.NET Core Backend
 
-Node.js + Express + TypeScript modular starter. Database engine and SQL driver not selected yet.
+Starter ASP.NET Core Web API using C# and .NET 8. No database connection is required yet.
+
+## Requirements
+- .NET 8 SDK
 
 ## Run
-
 ```bash
-cd backend
-npm install
-npm run dev
+dotnet restore
+dotnet run --launch-profile http
 ```
 
-Test: http://localhost:5000/api/health
+Test `http://localhost:5000/api/health` or `http://localhost:5000/`.
 
-## Module conventions
+## Structure
+- Controllers: HTTP endpoints
+- Services: business logic
+- Repositories: data access
+- Models: domain models
+- DTOs: request/response objects
+- Data: future MySQL connection
 
-Each module owns its routes, controller, service, repository, validation and types. Add SQL manually after database selection.
+## Next steps
+Add MySqlConnector, manually authored SQL schema, parameterized queries and feature endpoints. Never commit database passwords.
