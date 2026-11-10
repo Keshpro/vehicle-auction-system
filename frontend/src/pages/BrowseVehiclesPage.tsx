@@ -80,7 +80,7 @@ export default function BrowseVehiclesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1020] text-white">
+    <div className="min-h-screen bg-[#7f7f7f] text-white">
       {/* Font (move this <link> to index.html if you prefer) */}
       <link
         href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,800;1,700;1,800;1,900&display=swap"
@@ -421,7 +421,7 @@ export default function BrowseVehiclesPage() {
 
           <Link
             to="/auctions"
-            className="flex shrink-0 -skew-x-12 items-center gap-3 bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-white hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex shrink-0 -skew-x-12 items-center gap-3 bg-slate-250 px-8 py-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-white hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <span className="skew-x-12">Explore Live Auctions</span>
             <ArrowRight size={19} className="skew-x-12" />
