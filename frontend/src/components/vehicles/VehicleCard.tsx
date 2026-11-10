@@ -1,66 +1,63 @@
 
-import { Link } from "react-router-dom";
-import { ArrowUpRight, CalendarDays, Gavel } from "lucide-react";
-import type { FeaturedVehicle } from "../../types/featuredVehicle.types";
+import { ArrowRight, MapPin } from "lucide-react";
+import type { VehicleBrand } from "../../data/vehicleBrands";
 
-interface VehicleCardProps {
-  vehicle: FeaturedVehicle;
+interface Props {
+  brand: VehicleBrand;
+  onSelect: (brand: string) => void;
 }
 
-export default function VehicleCard({ vehicle }: VehicleCardProps) {
+export default function BrandCard({ brand, onSelect }: Props) {
   return (
-    <div className="group overflow-hidden rounded-xl border border-white/10 bg-[#171719] transition hover:border-[#c6a667]/50">
-      <div className="relative h-60 overflow-hidden">
+    <button
+      type="button"
+      onClick={() => onSelect(brand.name)}
+      className="group overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-red-500 hover:shadow-xl"
+    >
+      <div className="flex items-center gap-3 px-4 pt-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-50 p-2">
+          <img
+            src={brand.logo}
+            alt={`${brand.name} logo`}
+            loading="lazy"
+            className="max-h-full max-w-full object-contain"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="truncate text-lg font-black text-slate-900">
+            {brand.name}
+          </h3>
+
+          <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+            <MapPin size={12} />
+            {brand.country}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 h-36 overflow-hidden bg-slate-100">
         <img
-          src={vehicle.image}
-          alt={vehicle.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          src={brand.image}
+          alt={`${brand.name} vehicle`}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
+      </div>
 
-        <span
-          className={`absolute left-4 top-4 rounded px-3 py-1 text-xs font-semibold ${
-            vehicle.status === "Live"
-              ? "bg-green-500 text-white"
-              : "bg-[#c6a667] text-black"
-          }`}
-        >
-          {vehicle.status}
+      <div className="flex items-center justify-between px-4 py-4">
+        <span className="text-sm font-bold text-red-600">
+          View Vehicles
         </span>
+
+        <ArrowRight
+          size={18}
+          className="text-red-600 transition-transform group-hover:translate-x-1"
+        />
       </div>
-
-      <div className="p-6">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs uppercase tracking-widest text-[#c6a667]">
-            {vehicle.category}
-          </span>
-          <span className="flex items-center gap-2 text-sm text-zinc-400">
-            <CalendarDays size={15} />
-            {vehicle.year}
-          </span>
-        </div>
-
-        <h3 className="text-xl font-semibold text-white">
-          {vehicle.name}
-        </h3>
-
-        <div className="mt-6 border-t border-white/10 pt-5">
-          <p className="text-xs uppercase tracking-wider text-zinc-500">
-            Starting Price
-          </p>
-          <p className="mt-2 text-2xl font-bold text-[#c6a667]">
-            LKR {vehicle.price.toLocaleString()}
-          </p>
-        </div>
-
-        <Link
-          to={`/auctions/${vehicle.id}`}
-          className="mt-6 flex items-center justify-center gap-2 rounded bg-[#c6a667] px-5 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
-        >
-          <Gavel size={17} />
-          View Auction
-          <ArrowUpRight size={17} />
-        </Link>
-      </div>
-    </div>
+    </button>
   );
 }
