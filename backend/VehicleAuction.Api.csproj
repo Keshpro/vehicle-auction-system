@@ -1,7 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>5a26b110-15e5-4545-8599-9877272360af</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
 </Project>
