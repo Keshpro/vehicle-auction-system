@@ -1,0 +1,118 @@
+
+import type { AuctionVehicle } from "../types/auction.types";
+
+export const auctionVehicles: AuctionVehicle[] = [
+  {
+    id: 1,
+    lotNumber: "37194650",
+    name: "Toyota Land Cruiser Prado TX",
+    year: 2018,
+    mileage: 68421,
+    engine: "2690 CC",
+    transmission: "Automatic",
+    fuel: "Petrol",
+    drive: "4WD",
+    body: "SUV",
+    color: "Pearl White",
+    grade: "4.0",
+    location: "Tokyo, Japan",
+    startPrice: 2680000,
+    images: [
+      "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=1000",
+      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1000",
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1000",
+    ],
+  },
+  {
+    id: 2,
+    lotNumber: "40753870",
+    name: "Honda Vezel Hybrid Z",
+    year: 2020,
+    mileage: 32115,
+    engine: "1500 CC",
+    transmission: "Automatic",
+    fuel: "Hybrid",
+    drive: "2WD",
+    body: "SUV",
+    color: "Black",
+    grade: "4.5",
+    location: "Osaka, Japan",
+    startPrice: 1450000,
+    images: [
+      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=1000",
+      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1000",
+    ],
+  },
+  {
+    id: 3,
+    lotNumber: "36308890",
+    name: "Toyota Camry Hybrid G",
+    year: 2016,
+    mileage: 73197,
+    engine: "2500 CC",
+    transmission: "Automatic",
+    fuel: "Hybrid",
+    drive: "2WD",
+    body: "Sedan",
+    color: "White",
+    grade: "4.0",
+    location: "Nagoya, Japan",
+    startPrice: 1320000,
+    images: [
+      "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=1000",
+    ],
+  },
+  {
+    id: 4,
+    lotNumber: "36321880",
+    name: "Mazda Demio 13S",
+    year: 2013,
+    mileage: 97827,
+    engine: "1300 CC",
+    transmission: "Automatic",
+    fuel: "Petrol",
+    drive: "2WD",
+    body: "Hatchback",
+    color: "Red",
+    grade: "3.5",
+    location: "Tokyo, Japan",
+    startPrice: 480000,
+    images: [
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1000",
+    ],
+  },
+  {
+    id: 5,
+    lotNumber: "36356211",
+    name: "Nissan Serena Highway Star",
+    year: 2019,
+    mileage: 58342,
+    engine: "2000 CC",
+    transmission: "Automatic",
+    fuel: "Petrol",
+    drive: "2WD",
+    body: "Minivan",
+    color: "Silver",
+    grade: "4.0",
+    location: "Yokohama, Japan",
+    startPrice: 1980000,
+    images: [
+      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1000",
+    ],
+  },
+];
+
+export const auctionLanes = [
+  { id: "B", name: "Lane B", count: 129 },
+  { id: "A", name: "Lane A", count: 87 },
+  { id: "C", name: "Lane C", count: 201 },
+  { id: "D", name: "Lane D", count: 156 },
+  { id: "E", name: "Lane E", count: 94 },
+];
+
+export const formatYen = (amount: number) =>
+  new Intl.NumberFormat("ja-JP", {
+    style: "currency",
+    currency: "JPY",
+    maximumFractionDigits: 0,
+  }).format(amount);
