@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
   Menu,
   X,
-  Gavel,
   CarFront,
   UserRound,
   ArrowRight,
@@ -24,16 +22,13 @@ export default function Navbar() {
   const closeMenu = () => setOpen(false);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative flex items-center text-sm font-semibold transition-colors duration-200 ${
-      isActive
-        ? "text-red-600"
-        : "text-slate-700 hover:text-red-600"
+    `relative flex items-center whitespace-nowrap text-sm font-semibold transition-colors duration-200 ${
+      isActive ? "text-red-600" : "text-slate-700 hover:text-red-600"
     }`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
       <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-5 px-5 md:px-8">
-
         {/* LOGO */}
         <Link
           to="/"
@@ -56,7 +51,7 @@ export default function Navbar() {
         </Link>
 
         {/* DESKTOP NAVIGATION */}
-        <div className="hidden items-center gap-6 lg:flex xl:gap-8">
+        <div className="hidden items-center gap-4 xl:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.path}
@@ -67,7 +62,6 @@ export default function Navbar() {
               {({ isActive }) => (
                 <span className="relative flex h-[76px] items-center">
                   {link.label}
-
                   {isActive && (
                     <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-t bg-red-600" />
                   )}
@@ -78,14 +72,14 @@ export default function Navbar() {
 
           <a
             href="/#how-it-works"
-            className="text-sm font-semibold text-slate-700 transition hover:text-red-600"
+            className="whitespace-nowrap text-sm font-semibold text-slate-700 transition hover:text-red-600"
           >
             How It Works
           </a>
         </div>
 
         {/* DESKTOP ACTIONS */}
-        <div className="hidden shrink-0 items-center gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center gap-3 xl:flex">
           <Link
             to="/login"
             className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -110,7 +104,7 @@ export default function Navbar() {
           aria-expanded={open}
           aria-controls="mobile-navigation"
           onClick={() => setOpen(!open)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-800 transition hover:bg-slate-100 lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-800 transition hover:bg-slate-100 xl:hidden"
         >
           {open ? <X size={23} /> : <Menu size={23} />}
         </button>
@@ -120,7 +114,7 @@ export default function Navbar() {
       {open && (
         <div
           id="mobile-navigation"
-          className="border-t border-slate-200 bg-white px-5 pb-6 pt-4 shadow-lg lg:hidden"
+          className="border-t border-slate-200 bg-white px-5 pb-6 pt-4 shadow-lg xl:hidden"
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-1">
             {navLinks.map((link) => (
