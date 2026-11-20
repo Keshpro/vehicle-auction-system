@@ -2,9 +2,6 @@
 import { Link } from "react-router-dom";
 import {
   CarFront,
-  Facebook,
-  Instagram,
-  Linkedin,
   Mail,
   MapPin,
   ArrowRight,
@@ -166,30 +163,6 @@ export default function Footer() {
                     Contact details coming soon
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* SOCIAL MEDIA PLACEHOLDERS */}
-            <div className="mt-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Social Media
-              </p>
-
-              <div className="flex gap-3">
-                {[
-                  { name: "Facebook", icon: Facebook },
-                  { name: "Instagram", icon: Instagram },
-                  { name: "LinkedIn", icon: Linkedin },
-                ].map(({ name, icon: Icon }) => (
-                  <span
-                    key={name}
-                    title={`${name} link coming soon`}
-                    aria-label={`${name} link coming soon`}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400"
-                  >
-                    <Icon size={17} />
-                  </span>
-                ))}
               </div>
             </div>
           </div>
