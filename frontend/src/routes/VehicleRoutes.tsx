@@ -5,27 +5,49 @@ import VehicleListPage from "../pages/VehicleListPage";
 import AddVehiclePage from "../pages/AddVehiclePage";
 import VehicleDetailsPage from "../pages/VehicleDetailsPage";
 import BrowseVehiclesPage from "../pages/BrowseVehiclesPage";
+import BrandVehiclesPage from "../pages/BrandVehiclesPage";
 
 export default function VehicleRoutes() {
   return (
     <Routes>
-      {/* Public Vehicle Browsing */}
+      {/* Browse All Vehicle Brands */}
       <Route index element={<BrowseVehiclesPage />} />
 
-      {/* Vehicle Management - Railway MySQL Data */}
-      <Route path="manage" element={<VehicleListPage />} />
+      {/* Brand-Specific Vehicle Listings */}
+      <Route
+        path="brand/:brand"
+        element={<BrandVehiclesPage />}
+      />
 
-      {/* Keep Existing List URL Working */}
-      <Route path="list" element={<VehicleListPage />} />
+      {/* Vehicle Management */}
+      <Route
+        path="manage"
+        element={<VehicleListPage />}
+      />
 
-      {/* Add New Vehicle */}
-      <Route path="add" element={<AddVehiclePage />} />
+      {/* Existing Vehicle List URL */}
+      <Route
+        path="list"
+        element={<VehicleListPage />}
+      />
+
+      {/* Add Vehicle */}
+      <Route
+        path="add"
+        element={<AddVehiclePage />}
+      />
+
+      {/* Browse Brands Alternative URL */}
+      <Route
+        path="browse"
+        element={<BrowseVehiclesPage />}
+      />
 
       {/* Vehicle Details */}
-      <Route path=":id" element={<VehicleDetailsPage />} />
-
-      {/* Browse Vehicle Brands */}
-      <Route path="browse" element={<BrowseVehiclesPage />} />
+      <Route
+        path=":id"
+        element={<VehicleDetailsPage />}
+      />
     </Routes>
   );
 }

@@ -59,8 +59,9 @@ export default function BrowseVehiclesPage() {
     filteredBrands.length - INITIAL_VISIBLE_BRANDS
   );
 
-  const selectBrand = (brand: string) =>
-    navigate(`/vehicles/list?brand=${encodeURIComponent(brand)}`);
+  const selectBrand = (brand: string) => {
+    navigate(`/vehicles/brand/${encodeURIComponent(brand.toLowerCase())}`);
+  };
 
   const changeCategory = (value: string) => {
     setCategory(value);
@@ -236,11 +237,10 @@ export default function BrowseVehiclesPage() {
               key={item}
               type="button"
               onClick={() => changeCategory(item)}
-              className={`-skew-x-12 px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:text-sm ${
-                category === item
+              className={`-skew-x-12 px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:text-sm ${category === item
                   ? "bg-yellow-400 text-slate-900"
                   : "border border-slate-700 bg-slate-900 text-slate-300 hover:border-yellow-400 hover:text-yellow-400"
-              }`}
+                }`}
             >
               <span className="inline-block skew-x-12">{item}</span>
             </button>
