@@ -9,10 +9,13 @@ import BrowseVehiclesPage from "../pages/BrowseVehiclesPage";
 export default function VehicleRoutes() {
   return (
     <Routes>
-      {/* Browse Vehicle Brands */}
+      {/* Public Vehicle Browsing */}
       <Route index element={<BrowseVehiclesPage />} />
 
-      {/* Vehicle Listings */}
+      {/* Vehicle Management - Railway MySQL Data */}
+      <Route path="manage" element={<VehicleListPage />} />
+
+      {/* Keep Existing List URL Working */}
       <Route path="list" element={<VehicleListPage />} />
 
       {/* Add New Vehicle */}
@@ -21,7 +24,7 @@ export default function VehicleRoutes() {
       {/* Vehicle Details */}
       <Route path=":id" element={<VehicleDetailsPage />} />
 
-      {/* Optional Browse URL */}
+      {/* Browse Vehicle Brands */}
       <Route path="browse" element={<BrowseVehiclesPage />} />
     </Routes>
   );

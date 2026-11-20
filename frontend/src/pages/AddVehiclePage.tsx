@@ -1,42 +1,138 @@
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowLeft, CarFront, ImagePlus, Save } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+
+import { Link, useNavigate } from "react-router-dom";
+
+import {
+  ArrowLeft,
+  CarFront,
+  Save,
+  AlertCircle,
+  Loader2,
+  Info,
+  MapPin,
+} from "lucide-react";
+
+import {
+  createVehicle,
+  type VehicleRequest,
+} from "../services/vehicleService";
 
 interface VehicleFormData {
-  title: string;
-  brand: string;
+  consignorId: string;
+  yardLocationId: string;
+  registrationNumber: string;
+  chassisNumber: string;
+  make: string;
   model: string;
-  year: string;
-  mileage: string;
+  manufactureYear: string;
+  mileageKm: string;
+  colour: string;
   fuelType: string;
   transmission: string;
-  color: string;
-  startingPrice: string;
   description: string;
 }
 
+interface YardLocation {
+  yardLocationId: number;
+  locationName: string;
+  address: string | null;
+}
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000";
+
 const initialForm: VehicleFormData = {
-  title: "",
-  brand: "",
+  consignorId: "",
+  yardLocationId: "",
+  registrationNumber: "",
+  chassisNumber: "",
+  make: "",
   model: "",
-  year: "",
-  mileage: "",
+  manufactureYear: "",
+  mileageKm: "",
+  colour: "",
   fuelType: "",
   transmission: "",
-  color: "",
-  startingPrice: "",
   description: "",
 };
 
-export default function AddVehiclePage() {
-  const [form, setForm] = useState<VehicleFormData>(initialForm);
-  const [images, setImages] = useState<File[]>([]);
-  const [message, setMessage] = useState("");
+const inputClass =
+  "w-full rounded-xl border border-white/15 bg-[#222226] px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/10 disabled:cursor-not-allowed disabled:opacity-50";
 
+export default function AddVehiclePage() {
+  const navigate = useNavigate();
+
+  const [form, setForm] =
+    useState<VehicleFormData>(initialForm);
+
+  const [yardLocations, setYardLocations] =
+    useState<YardLocation[]>([]);
+
+  const [yardLoading, setYardLoading] = useState(true);
+  const [yardError, setYardError] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // LOAD YARD LOCATIONS FROM MYSQL
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadYardLocations() {
+      try {
+        setYardLoading(true);
+        setYardError("");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/yard-locations`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            "Failed to load yard locations."
+          );
+        }
+
+        const data: YardLocation[] =
+          await response.json();
+
+        if (!controller.signal.aborted) {
+          setYardLocations(data);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+
+        setYardError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load yard locations."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setYardLoading(false);
+        }
+      }
+    }
+
+    void loadYardLocations();
+
+    return () => controller.abort();
+  }, []);
+
+  // HANDLE INPUT CHANGES
   const handleChange = (
     event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      HTMLInputElement |
+      HTMLSelectElement |
+      HTMLTextAreaElement
     >
   ) => {
     const { name, value } = event.target;
@@ -47,259 +143,429 @@ export default function AddVehiclePage() {
     }));
   };
 
-  const handleImages = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files ?? []);
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (selectedFiles.some((file) => !allowedTypes.includes(file.type))) {
-      setMessage("Please select JPG, PNG or WebP images only.");
-      setImages([]);
-      event.target.value = "";
-      return;
-    }
-
-    if (selectedFiles.length > 5) {
-      setMessage("Maximum 5 images allowed.");
-      setImages([]);
-      event.target.value = "";
-      return;
-    }
-
-    if (selectedFiles.some((file) => file.size > 5 * 1024 * 1024)) {
-      setMessage("Each image must be 5 MB or smaller.");
-      setImages([]);
-      event.target.value = "";
-      return;
-    }
-
-    setImages(selectedFiles);
-    setMessage("");
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  // SAVE VEHICLE TO DATABASE
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
+    if (loading) return;
 
-    // API integration will be added in a later phase.
-    setMessage(
-      "Form validated. Vehicle has not been saved yet. Backend integration is pending."
+    setError("");
+
+    const consignorId = Number(form.consignorId);
+    const yardLocationId = Number(form.yardLocationId);
+    const manufactureYear = Number(form.manufactureYear);
+
+    if (
+      !Number.isInteger(consignorId) ||
+      consignorId <= 0
+    ) {
+      setError("Please enter a valid Consignor ID.");
+      return;
+    }
+
+    const yardExists = yardLocations.some(
+      (yard) => yard.yardLocationId === yardLocationId
     );
 
-    console.log("Vehicle form preview:", form);
-    console.log("Selected image count:", images.length);
+    if (
+      !Number.isInteger(yardLocationId) ||
+      !yardExists
+    ) {
+      setError("Please select a valid Yard Location.");
+      return;
+    }
+
+    if (
+      !Number.isInteger(manufactureYear) ||
+      manufactureYear < 1886 ||
+      manufactureYear > new Date().getFullYear() + 1
+    ) {
+      setError("Please enter a valid manufacture year.");
+      return;
+    }
+
+    const mileageKm =
+      form.mileageKm.trim() === ""
+        ? null
+        : Number(form.mileageKm);
+
+    if (
+      mileageKm !== null &&
+      (
+        !Number.isInteger(mileageKm) ||
+        mileageKm < 0 ||
+        mileageKm > 2147483647
+      )
+    ) {
+      setError("Please enter a valid mileage.");
+      return;
+    }
+
+    if (
+      !form.chassisNumber.trim() ||
+      !form.make.trim() ||
+      !form.model.trim()
+    ) {
+      setError("Please complete all required fields.");
+      return;
+    }
+
+    const request: VehicleRequest = {
+      consignorId,
+      yardLocationId,
+
+      registrationNumber:
+        form.registrationNumber.trim() || null,
+
+      chassisNumber: form.chassisNumber.trim(),
+      make: form.make.trim(),
+      model: form.model.trim(),
+      manufactureYear,
+      mileageKm,
+
+      colour: form.colour.trim() || null,
+      fuelType: form.fuelType || null,
+      transmission: form.transmission || null,
+      description: form.description.trim() || null,
+    };
+
+    try {
+      setLoading(true);
+
+      const response = await createVehicle(request);
+
+      navigate("/vehicles/manage", {
+        replace: true,
+        state: {
+          success:
+            `Vehicle #${response.vehicleId} created successfully.`,
+        },
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to register vehicle."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="min-h-screen bg-[#0b0b0d] px-6 py-12 text-white">
+    <main className="min-h-screen bg-[#0b0b0d] px-5 py-12 text-white">
       <div className="mx-auto max-w-5xl">
+
+        {/* BACK BUTTON */}
         <Link
-          to="/vehicles"
-          className="mb-8 inline-flex items-center gap-2 text-zinc-400 transition hover:text-[#c6a667]"
+          to="/vehicles/manage"
+          className="mb-8 inline-flex items-center gap-2 text-zinc-400 transition hover:text-red-400"
         >
           <ArrowLeft size={18} />
-          Back to Vehicles
+          Back to Vehicle Management
         </Link>
 
+        {/* PAGE HEADER */}
         <div className="mb-10 flex items-center gap-4">
-          <div className="rounded-xl bg-[#c6a667]/10 p-4 text-[#c6a667]">
+
+          <div className="rounded-xl bg-red-600/10 p-4 text-red-500">
             <CarFront size={30} />
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-[#c6a667]">
-              Vehicle Management
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-500">
+              Schokman &amp; Samerawickreme
             </p>
-            <h1 className="mt-2 text-3xl font-semibold">
+
+            <h1 className="mt-2 text-3xl font-bold">
               Register New Vehicle
             </h1>
+
             <p className="mt-2 text-sm text-zinc-400">
-              Enter the vehicle information below.
+              Register vehicles directly into the auction database.
             </p>
           </div>
         </div>
 
+        {/* INFORMATION */}
+        <div className="mb-8 flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
+          <Info
+            size={20}
+            className="mt-0.5 shrink-0 text-blue-400"
+          />
+
+          <div>
+            <p className="text-sm font-semibold text-blue-300">
+              Vehicle Registration Information
+            </p>
+
+            <p className="mt-1 text-xs leading-6 text-zinc-400">
+              Select the vehicle storage location from the
+              database. A valid consignor must already exist.
+              Vehicle images and auction pricing are managed
+              separately.
+            </p>
+          </div>
+        </div>
+
+        {/* VEHICLE REGISTRATION FORM */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-8 rounded-2xl border border-white/10 bg-[#171719] p-6 shadow-xl md:p-10"
+          className="space-y-9 rounded-2xl border border-white/10 bg-[#171719] p-6 shadow-xl md:p-10"
         >
+
+          {/* OWNERSHIP & LOCATION */}
           <section>
             <h2 className="mb-6 border-b border-white/10 pb-4 text-xl font-semibold">
-              Basic Information
+              Ownership &amp; Location
             </h2>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <Field label="Vehicle Title">
-                <input
-                  required
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="Toyota Prius 2018"
-                  className="input-style"
-                />
-              </Field>
 
-              <Field label="Brand">
-                <input
-                  required
-                  name="brand"
-                  value={form.brand}
-                  onChange={handleChange}
-                  placeholder="Toyota"
-                  className="input-style"
-                />
-              </Field>
-
-              <Field label="Model">
-                <input
-                  required
-                  name="model"
-                  value={form.model}
-                  onChange={handleChange}
-                  placeholder="Prius"
-                  className="input-style"
-                />
-              </Field>
-
-              <Field label="Manufacture Year">
+              {/* CONSIGNOR */}
+              <Field label="Consignor ID" required>
                 <input
                   required
                   type="number"
-                  name="year"
-                  min="1900"
-                  max={new Date().getFullYear() + 1}
-                  value={form.year}
+                  min="1"
+                  step="1"
+                  name="consignorId"
+                  value={form.consignorId}
                   onChange={handleChange}
-                  className="input-style"
+                  placeholder="Enter Consignor ID"
+                  className={inputClass}
+                />
+              </Field>
+
+              {/* YARD LOCATION DROPDOWN */}
+              <Field label="Yard Location" required>
+                <div className="relative">
+                  <MapPin
+                    size={17}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-red-500"
+                  />
+
+                  <select
+                    required
+                    name="yardLocationId"
+                    value={form.yardLocationId}
+                    onChange={handleChange}
+                    disabled={
+                      yardLoading ||
+                      yardLocations.length === 0
+                    }
+                    className={`${inputClass} pl-10`}
+                  >
+                    <option value="">
+                      {yardLoading
+                        ? "Loading locations..."
+                        : yardLocations.length === 0
+                        ? "No locations available"
+                        : "Select Yard Location"}
+                    </option>
+
+                    {yardLocations.map((yard) => (
+                      <option
+                        key={yard.yardLocationId}
+                        value={yard.yardLocationId}
+                      >
+                        {yard.locationName}
+                        {yard.address
+                          ? ` — ${yard.address}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {yardError && (
+                  <p
+                    role="alert"
+                    className="mt-2 text-xs text-red-400"
+                  >
+                    {yardError}
+                  </p>
+                )}
+              </Field>
+            </div>
+          </section>
+
+          {/* VEHICLE IDENTIFICATION */}
+          <section>
+            <h2 className="mb-6 border-b border-white/10 pb-4 text-xl font-semibold">
+              Vehicle Identification
+            </h2>
+
+            <div className="grid gap-6 md:grid-cols-2">
+
+              <Field label="Registration Number">
+                <input
+                  name="registrationNumber"
+                  maxLength={30}
+                  value={form.registrationNumber}
+                  onChange={handleChange}
+                  placeholder="WP CAB-1234"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Chassis Number" required>
+                <input
+                  required
+                  name="chassisNumber"
+                  maxLength={50}
+                  value={form.chassisNumber}
+                  onChange={handleChange}
+                  placeholder="Enter unique chassis number"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </section>
+
+          {/* BASIC VEHICLE DETAILS */}
+          <section>
+            <h2 className="mb-6 border-b border-white/10 pb-4 text-xl font-semibold">
+              Basic Vehicle Information
+            </h2>
+
+            <div className="grid gap-6 md:grid-cols-2">
+
+              <Field label="Vehicle Brand" required>
+                <input
+                  required
+                  name="make"
+                  maxLength={50}
+                  value={form.make}
+                  onChange={handleChange}
+                  placeholder="Toyota"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Vehicle Model" required>
+                <input
+                  required
+                  name="model"
+                  maxLength={50}
+                  value={form.model}
+                  onChange={handleChange}
+                  placeholder="Prius"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Manufacture Year" required>
+                <input
+                  required
+                  type="number"
+                  name="manufactureYear"
+                  min="1886"
+                  max={new Date().getFullYear() + 1}
+                  step="1"
+                  value={form.manufactureYear}
+                  onChange={handleChange}
+                  placeholder="2020"
+                  className={inputClass}
                 />
               </Field>
 
               <Field label="Mileage (km)">
                 <input
-                  required
                   type="number"
-                  name="mileage"
+                  name="mileageKm"
                   min="0"
-                  value={form.mileage}
+                  step="1"
+                  value={form.mileageKm}
                   onChange={handleChange}
-                  className="input-style"
+                  placeholder="45000"
+                  className={inputClass}
                 />
               </Field>
 
-              <Field label="Color">
+              <Field label="Colour">
                 <input
-                  required
-                  name="color"
-                  value={form.color}
+                  name="colour"
+                  maxLength={30}
+                  value={form.colour}
                   onChange={handleChange}
                   placeholder="White"
-                  className="input-style"
+                  className={inputClass}
                 />
               </Field>
 
               <Field label="Fuel Type">
                 <select
-                  required
                   name="fuelType"
                   value={form.fuelType}
                   onChange={handleChange}
-                  className="input-style"
+                  className={inputClass}
                 >
                   <option value="">Select Fuel Type</option>
                   <option value="Petrol">Petrol</option>
                   <option value="Diesel">Diesel</option>
                   <option value="Hybrid">Hybrid</option>
                   <option value="Electric">Electric</option>
+                  <option value="Other">Other</option>
                 </select>
               </Field>
 
               <Field label="Transmission">
                 <select
-                  required
                   name="transmission"
                   value={form.transmission}
                   onChange={handleChange}
-                  className="input-style"
+                  className={inputClass}
                 >
                   <option value="">Select Transmission</option>
                   <option value="Automatic">Automatic</option>
                   <option value="Manual">Manual</option>
+                  <option value="CVT">CVT</option>
+                  <option value="Semi-Automatic">
+                    Semi-Automatic
+                  </option>
                 </select>
               </Field>
             </div>
           </section>
 
+          {/* DESCRIPTION */}
           <section>
             <h2 className="mb-6 border-b border-white/10 pb-4 text-xl font-semibold">
-              Pricing & Description
+              Additional Information
             </h2>
 
-            <div className="space-y-6">
-              <Field label="Starting Price (LKR)">
-                <input
-                  required
-                  type="number"
-                  name="startingPrice"
-                  min="1"
-                  value={form.startingPrice}
-                  onChange={handleChange}
-                  placeholder="8500000"
-                  className="input-style"
-                />
-              </Field>
-
-              <Field label="Vehicle Description">
-                <textarea
-                  required
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={5}
-                  placeholder="Describe the vehicle condition and features..."
-                  className="input-style"
-                />
-              </Field>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-6 border-b border-white/10 pb-4 text-xl font-semibold">
-              Vehicle Images
-            </h2>
-
-            <label className="flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-white/20 p-10 text-center transition hover:border-[#c6a667]">
-              <ImagePlus size={36} className="mb-4 text-[#c6a667]" />
-              <span className="font-medium">
-                Click to select vehicle images
-              </span>
-              <span className="mt-2 text-sm text-zinc-400">
-                JPG, PNG, WebP • Max 5 images • 5 MB each
-              </span>
-
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={handleImages}
-                className="hidden"
+            <Field label="Vehicle Description">
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={5}
+                placeholder="Describe the vehicle condition and features..."
+                className={inputClass}
               />
-            </label>
-
-            {images.length > 0 && (
-              <p className="mt-4 text-sm text-[#c6a667]">
-                {images.length} image(s) selected
-              </p>
-            )}
+            </Field>
           </section>
 
-          {message && (
-            <p role="status" className="rounded-lg border border-[#c6a667]/30 bg-[#c6a667]/10 p-4 text-sm text-[#e5c785]">
-              {message}
-            </p>
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300"
+            >
+              <AlertCircle
+                size={19}
+                className="shrink-0"
+              />
+              {error}
+            </div>
           )}
 
+          {/* ACTION BUTTONS */}
           <div className="flex flex-wrap justify-end gap-4 border-t border-white/10 pt-6">
             <Link
-              to="/vehicles"
+              to="/vehicles/manage"
               className="rounded-lg border border-white/20 px-6 py-3 text-zinc-300 transition hover:bg-white/10"
             >
               Cancel
@@ -307,10 +573,27 @@ export default function AddVehiclePage() {
 
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-7 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
+              disabled={
+                loading ||
+                yardLoading ||
+                yardLocations.length === 0
+              }
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-7 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Save size={18} />
-              Validate Vehicle
+              {loading ? (
+                <>
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+                  Saving Vehicle...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Register Vehicle
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -319,18 +602,26 @@ export default function AddVehiclePage() {
   );
 }
 
+// REUSABLE FORM FIELD
 function Field({
   label,
   children,
+  required = false,
 }: {
   label: string;
   children: React.ReactNode;
+  required?: boolean;
 }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-medium text-zinc-300">
         {label}
+
+        {required && (
+          <span className="ml-1 text-red-500">*</span>
+        )}
       </span>
+
       {children}
     </label>
   );
