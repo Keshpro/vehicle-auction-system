@@ -117,4 +117,24 @@ public class AuctionRepository
 
         return details;
     }
+        public async Task<int> CreateAsync(string title, string? description,
+        DateTime startsAt, DateTime endsAt, int createdBy)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        var sql = @"INSERT INTO auctions (title, description, starts_at, ends_at, status, created_by)
+                    VALUES (@title, @description, @startsAt, @endsAt, 'Draft', @createdBy);
+                    SELECT LAST_INSERT_ID();";
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@title", title);
+        cmd.Parameters.AddWithValue("@description", (object?)description ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@startsAt", startsAt);
+        cmd.Parameters.AddWithValue("@endsAt", endsAt);
+        cmd.Parameters.AddWithValue("@createdBy", createdBy);
+
+        var newId = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(newId);
+    }
 }

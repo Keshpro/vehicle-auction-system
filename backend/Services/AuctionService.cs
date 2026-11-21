@@ -20,4 +20,14 @@ public class AuctionService
     {
         return _repository.GetByIdAsync(id);
     }
+        public async Task<int> CreateAuctionAsync(DTOs.CreateAuctionRequest request)
+    {
+        if (request.EndsAt <= request.StartsAt)
+            throw new ArgumentException("EndsAt must be later than StartsAt.");
+
+        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
+        return await _repository.CreateAsync(
+            request.Title.Trim(), request.Description,
+            request.StartsAt, request.EndsAt, demoAdminId);
+    }
 }
