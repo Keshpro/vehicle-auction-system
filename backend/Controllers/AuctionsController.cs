@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using VehicleAuction.Api.Services;
+using MySqlConnector;
 
 namespace VehicleAuction.Api.Controllers;
 
@@ -40,6 +41,23 @@ public class AuctionsController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+        [HttpPost("{id:int}/publish")]
+    public async Task<IActionResult> Publish(int id)
+    {
+        try
+        {
+            await _service.PublishAuctionAsync(id);
+            var updated = await _service.GetAuctionAsync(id);
+            return Ok(updated);
+        }
+        catch (MySqlConnector.MySqlException ex) when (ex.SqlState == "45000")
+        {
+            var message = ex.Message;
+            if (message.Contains("not found"))
+                return NotFound(new { message });
+            return BadRequest(new { message });
         }
     }
 }

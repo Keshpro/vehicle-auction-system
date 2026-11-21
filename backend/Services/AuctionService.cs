@@ -30,4 +30,9 @@ public class AuctionService
             request.Title.Trim(), request.Description,
             request.StartsAt, request.EndsAt, demoAdminId);
     }
+        public async Task PublishAuctionAsync(int id)
+    {
+        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
+        await _repository.PublishAsync(id, demoAdminId);
+    }
 }

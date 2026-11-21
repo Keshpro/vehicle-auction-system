@@ -137,4 +137,18 @@ public class AuctionRepository
         var newId = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(newId);
     }
+        public async Task PublishAsync(int auctionId, int actorUserId)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        await using var cmd = new MySqlCommand("sp_publish_auction", connection)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("p_auction_id", auctionId);
+        cmd.Parameters.AddWithValue("p_actor", actorUserId);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
 }
