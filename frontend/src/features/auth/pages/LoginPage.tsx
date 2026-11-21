@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   CarFront,
@@ -12,7 +12,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
-import { loginBidder } from "../services/authService";
+import { login } from "../services/authService";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition duration-200 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-500/10";
@@ -24,6 +24,7 @@ type LoggedInUser = {
 };
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +37,11 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await loginBidder({ email, password });
+      const result = await login({ email, password });
+      if (result.role === "Admin") {
+        navigate("/admin", { replace: true });
+        return;
+      }
       setUser({
         fullName: result.fullName || "Bidder",
         role: result.role || "Bidder",
@@ -66,13 +71,13 @@ export default function LoginPage() {
           <div className="px-10 pb-11">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold tracking-wider text-white/90 backdrop-blur-sm"><Gavel size={15} className="text-red-400" /> S&amp;S AUCTION PLATFORM</span>
             <h2 className="mt-6 max-w-sm text-4xl font-black leading-[1.15] tracking-tight">Welcome back to <span className="text-red-400">the action.</span></h2>
-            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-200">Sign in to access your bidder account and stay connected to the latest vehicle auctions.</p>
-            <div className="mt-8 flex items-start gap-3 border-t border-white/20 pt-7 text-sm text-slate-100"><ShieldCheck size={21} className="shrink-0 text-red-400" /><p>Secure access to your S&amp;S bidder account.</p></div>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-slate-200">Sign in to access your account and stay connected to the latest vehicle auctions.</p>
+            <div className="mt-8 flex items-start gap-3 border-t border-white/20 pt-7 text-sm text-slate-100"><ShieldCheck size={21} className="shrink-0 text-red-400" /><p>Secure access to your S&amp;S account.</p></div>
           </div>
         </aside>
 
         <div className="flex flex-col justify-center px-6 py-11 sm:px-10 lg:px-16">
-          <div className="mb-8 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-red-600"><LockKeyhole size={14} /> Bidder login</span><Link to="/" className="text-xs font-semibold text-slate-500 hover:text-red-600">← Back to home</Link></div>
+          <div className="mb-8 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-red-600"><LockKeyhole size={14} /> Account login</span><Link to="/" className="text-xs font-semibold text-slate-500 hover:text-red-600">← Back to home</Link></div>
 
           {!user ? (
             <>

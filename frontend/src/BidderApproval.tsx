@@ -21,6 +21,7 @@ export default function BidderApproval() {
     async function loadBidders() {
       try {
         const response = await fetch(`${usersApi}/pending-bidders`, {
+          credentials: "include",
           signal: controller.signal,
         });
         if (!response.ok) throw new Error();
@@ -45,6 +46,7 @@ export default function BidderApproval() {
     try {
       const response = await fetch(`${usersApi}/${userId}/approval`, {
         method: "PUT",
+        credentials: "include",
       });
       if (!response.ok) {
         setError(`Approval failed (${response.status}). Refresh the list and try again.`);

@@ -19,6 +19,7 @@ export default function UserManagement() {
     async function loadUsers() {
       try {
         const response = await fetch("http://localhost:5000/api/admin/users", {
+          credentials: "include",
           signal: controller.signal,
         });
 
