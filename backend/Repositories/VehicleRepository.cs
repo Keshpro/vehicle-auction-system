@@ -18,7 +18,9 @@ public class VehicleRepository
         );
     }
 
+    // ==========================================
     // READ ALL VEHICLES
+    // ==========================================
     public async Task<List<Vehicle>> GetAllAsync()
     {
         var vehicles = new List<Vehicle>();
@@ -62,7 +64,92 @@ public class VehicleRepository
         return vehicles;
     }
 
+    // ==========================================
+    // SEARCH AND FILTER VEHICLES
+    // ==========================================
+    public async Task<List<Vehicle>> SearchAsync(
+        string? make,
+        string? model,
+        string? fuelType,
+        int? minYear,
+        int? maxYear)
+    {
+        var vehicles = new List<Vehicle>();
+
+        await using var connection =
+            new MySqlConnection(_connectionString);
+
+        await connection.OpenAsync();
+
+        const string sql = """
+            SELECT
+                vehicle_id,
+                consignor_id,
+                yard_location_id,
+                registration_number,
+                chassis_number,
+                make,
+                model,
+                manufacture_year,
+                colour,
+                mileage_km,
+                fuel_type,
+                transmission,
+                description,
+                created_at
+            FROM vehicles
+            WHERE
+                (@Make IS NULL OR make = @Make)
+                AND (@Model IS NULL OR model LIKE @Model)
+                AND (@FuelType IS NULL OR fuel_type = @FuelType)
+                AND (@MinYear IS NULL OR manufacture_year >= @MinYear)
+                AND (@MaxYear IS NULL OR manufacture_year <= @MaxYear)
+            ORDER BY vehicle_id DESC;
+            """;
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue(
+            "@Make",
+            string.IsNullOrWhiteSpace(make)
+                ? DBNull.Value
+                : make.Trim());
+
+        command.Parameters.AddWithValue(
+            "@Model",
+            string.IsNullOrWhiteSpace(model)
+                ? DBNull.Value
+                : $"%{model.Trim()}%");
+
+        command.Parameters.AddWithValue(
+            "@FuelType",
+            string.IsNullOrWhiteSpace(fuelType)
+                ? DBNull.Value
+                : fuelType.Trim());
+
+        command.Parameters.AddWithValue(
+            "@MinYear",
+            (object?)minYear ?? DBNull.Value);
+
+        command.Parameters.AddWithValue(
+            "@MaxYear",
+            (object?)maxYear ?? DBNull.Value);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            vehicles.Add(MapVehicle(reader));
+        }
+
+        return vehicles;
+    }
+
+    // ==========================================
     // READ VEHICLE BY ID
+    // ==========================================
     public async Task<Vehicle?> GetByIdAsync(int id)
     {
         await using var connection =
@@ -106,7 +193,9 @@ public class VehicleRepository
         return null;
     }
 
+    // ==========================================
     // CREATE VEHICLE
+    // ==========================================
     public async Task<int> CreateAsync(VehicleRequestDto vehicle)
     {
         await using var connection =
@@ -155,11 +244,12 @@ public class VehicleRepository
         return checked((int)command.LastInsertedId);
     }
 
+    // ==========================================
     // UPDATE VEHICLE
+    // ==========================================
     public async Task<bool> UpdateAsync(
         int id,
-        VehicleRequestDto vehicle
-    )
+        VehicleRequestDto vehicle)
     {
         await using var connection =
             new MySqlConnection(_connectionString);
@@ -189,14 +279,18 @@ public class VehicleRepository
 
         AddVehicleParameters(command, vehicle);
 
-        command.Parameters.AddWithValue("@VehicleId", id);
+        command.Parameters.AddWithValue(
+            "@VehicleId", id);
 
-        var affectedRows = await command.ExecuteNonQueryAsync();
+        var affectedRows =
+            await command.ExecuteNonQueryAsync();
 
         return affectedRows > 0;
     }
 
+    // ==========================================
     // DELETE VEHICLE
+    // ==========================================
     public async Task<bool> DeleteAsync(int id)
     {
         await using var connection =
@@ -212,78 +306,70 @@ public class VehicleRepository
         await using var command =
             new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@VehicleId", id);
+        command.Parameters.AddWithValue(
+            "@VehicleId", id);
 
-        var affectedRows = await command.ExecuteNonQueryAsync();
+        var affectedRows =
+            await command.ExecuteNonQueryAsync();
 
         return affectedRows > 0;
     }
 
+    // ==========================================
     // ADD SQL PARAMETERS
+    // ==========================================
     private static void AddVehicleParameters(
         MySqlCommand command,
-        VehicleRequestDto vehicle
-    )
+        VehicleRequestDto vehicle)
     {
         command.Parameters.AddWithValue(
-            "@ConsignorId", vehicle.ConsignorId
-        );
+            "@ConsignorId", vehicle.ConsignorId);
 
         command.Parameters.AddWithValue(
-            "@YardLocationId", vehicle.YardLocationId
-        );
+            "@YardLocationId", vehicle.YardLocationId);
 
         command.Parameters.AddWithValue(
             "@RegistrationNumber",
-            (object?)vehicle.RegistrationNumber ?? DBNull.Value
-        );
+            (object?)vehicle.RegistrationNumber ?? DBNull.Value);
 
         command.Parameters.AddWithValue(
-            "@ChassisNumber", vehicle.ChassisNumber
-        );
+            "@ChassisNumber", vehicle.ChassisNumber);
 
         command.Parameters.AddWithValue(
-            "@Make", vehicle.Make
-        );
+            "@Make", vehicle.Make);
 
         command.Parameters.AddWithValue(
-            "@Model", vehicle.Model
-        );
+            "@Model", vehicle.Model);
 
         command.Parameters.AddWithValue(
-            "@ManufactureYear", vehicle.ManufactureYear
-        );
+            "@ManufactureYear", vehicle.ManufactureYear);
 
         command.Parameters.AddWithValue(
             "@Colour",
-            (object?)vehicle.Colour ?? DBNull.Value
-        );
+            (object?)vehicle.Colour ?? DBNull.Value);
 
         command.Parameters.AddWithValue(
             "@MileageKm",
-            (object?)vehicle.MileageKm ?? DBNull.Value
-        );
+            (object?)vehicle.MileageKm ?? DBNull.Value);
 
         command.Parameters.AddWithValue(
             "@FuelType",
-            (object?)vehicle.FuelType ?? DBNull.Value
-        );
+            (object?)vehicle.FuelType ?? DBNull.Value);
 
         command.Parameters.AddWithValue(
             "@Transmission",
-            (object?)vehicle.Transmission ?? DBNull.Value
-        );
+            (object?)vehicle.Transmission ?? DBNull.Value);
 
         command.Parameters.AddWithValue(
             "@Description",
-            (object?)vehicle.Description ?? DBNull.Value
-        );
+            (object?)vehicle.Description ?? DBNull.Value);
     }
 
-    // CONVERT MYSQL ROW TO VEHICLE MODEL
+    // ==========================================
+    // MAP MYSQL RESULT TO VEHICLE MODEL
+    // ==========================================
     private static Vehicle MapVehicle(
-        MySqlDataReader reader
-    )
+        MySqlDataReader reader)
     {
         return new Vehicle
         {
@@ -294,44 +380,53 @@ public class VehicleRepository
             YardLocationId = reader.GetInt32("yard_location_id"),
 
             RegistrationNumber =
-                reader.IsDBNull(reader.GetOrdinal("registration_number"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("registration_number"))
                     ? null
                     : reader.GetString("registration_number"),
 
-            ChassisNumber = reader.GetString("chassis_number"),
+            ChassisNumber =
+                reader.GetString("chassis_number"),
 
             Make = reader.GetString("make"),
 
             Model = reader.GetString("model"),
 
-            ManufactureYear = reader.GetInt32("manufacture_year"),
+            ManufactureYear =
+                reader.GetInt32("manufacture_year"),
 
             Colour =
-                reader.IsDBNull(reader.GetOrdinal("colour"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("colour"))
                     ? null
                     : reader.GetString("colour"),
 
             MileageKm =
-                reader.IsDBNull(reader.GetOrdinal("mileage_km"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("mileage_km"))
                     ? null
                     : reader.GetInt32("mileage_km"),
 
             FuelType =
-                reader.IsDBNull(reader.GetOrdinal("fuel_type"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("fuel_type"))
                     ? null
                     : reader.GetString("fuel_type"),
 
             Transmission =
-                reader.IsDBNull(reader.GetOrdinal("transmission"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("transmission"))
                     ? null
                     : reader.GetString("transmission"),
 
             Description =
-                reader.IsDBNull(reader.GetOrdinal("description"))
+                reader.IsDBNull(
+                    reader.GetOrdinal("description"))
                     ? null
                     : reader.GetString("description"),
 
-            CreatedAt = reader.GetDateTime("created_at")
+            CreatedAt =
+                reader.GetDateTime("created_at")
         };
     }
 }

@@ -1,17 +1,34 @@
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using VehicleAuction.Api.Repositories;
+using VehicleAuction.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register Controllers
+// ==========================================
+// REGISTER CONTROLLERS
+// ==========================================
+
 builder.Services.AddControllers();
 
-// Register Auction Repository and Service
-builder.Services.AddScoped<AuctionRepository>();
-builder.Services.AddScoped<VehicleAuction.Api.Services.AuctionService>();
+// ==========================================
+// REGISTER REPOSITORIES AND SERVICES
+// ==========================================
 
-// Authentication for Registration and Login
+// Auction Management
+builder.Services.AddScoped<AuctionRepository>();
+builder.Services.AddScoped<AuctionService>();
+
+// Vehicle Management
+builder.Services.AddScoped<VehicleRepository>();
+
+// Automated Database Migration
+builder.Services.AddScoped<DatabaseMigrationService>();
+
+// ==========================================
+// AUTHENTICATION CONFIGURATION
+// ==========================================
+
 builder.Services.AddAuthentication(
     CookieAuthenticationDefaults.AuthenticationScheme
 )
@@ -35,14 +52,10 @@ builder.Services.AddAuthentication(
 
 builder.Services.AddAuthorization();
 
-// Register Database Migration Service
-builder.Services.AddScoped<
-    VehicleAuction.Api.Services.DatabaseMigrationService>();
+// ==========================================
+// REACT FRONTEND CORS
+// ==========================================
 
-// Register Vehicle Repository
-builder.Services.AddScoped<VehicleRepository>();
-
-// Configure React Frontend CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
@@ -52,33 +65,43 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 
+// ==========================================
+// BUILD APPLICATION
+// ==========================================
+
 var app = builder.Build();
 
 // ==========================================
-// DATABASE MIGRATION FILE DETECTION TEST
+// AUTOMATED DATABASE MIGRATION
 // ==========================================
 
-if (app.Environment.IsDevelopment())
+// Run migrations only in Development and
+// only when explicitly enabled for local testing.
+
+if (app.Environment.IsDevelopment() &&
+    app.Configuration.GetValue<bool>(
+        "DatabaseMigrations:RunOnStartup"))
 {
     using var scope = app.Services.CreateScope();
 
     var migrationService = scope.ServiceProvider
-        .GetRequiredService<
-            VehicleAuction.Api.Services.DatabaseMigrationService>();
+        .GetRequiredService<DatabaseMigrationService>();
 
-    // STEP 1: Detect SQL migration files only
+    // Step 1: Detect available SQL migration files
     migrationService.CheckMigrationFiles();
 
-    // STEP 2: Automatic migration execution
-    // Temporarily disabled during file detection testing
-    // await migrationService.ApplyMigrationsAsync();
+    // Step 2: Execute pending SQL migrations
+    await migrationService.ApplyMigrationsAsync();
+
+    Console.WriteLine(
+        "[SUCCESS] Automatic database migration completed.");
 }
 
 // ==========================================
 // APPLICATION MIDDLEWARE
 // ==========================================
 
-// Configure CORS
+// Enable CORS
 app.UseCors("ReactFrontend");
 
 // Enable Authentication
@@ -87,13 +110,23 @@ app.UseAuthentication();
 // Enable Authorization
 app.UseAuthorization();
 
-// Map API Controllers
+// ==========================================
+// MAP API CONTROLLERS
+// ==========================================
+
 app.MapControllers();
 
-// API Health Response
+// ==========================================
+// API HEALTH CHECK
+// ==========================================
+
 app.MapGet("/", () => Results.Ok(new
 {
     message = "Vehicle Auction API is running"
 }));
+
+// ==========================================
+// START APPLICATION
+// ==========================================
 
 app.Run();
