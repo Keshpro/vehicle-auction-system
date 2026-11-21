@@ -16,4 +16,8 @@ public class AuctionService
     {
         return _repository.GetAllAsync(status);
     }
+        public Task<AuctionDetails?> GetAuctionAsync(int id)
+    {
+        return _repository.GetByIdAsync(id);
+    }
 }
