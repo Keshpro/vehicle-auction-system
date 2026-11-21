@@ -20,4 +20,12 @@ public class AuctionsController : ControllerBase
         var auctions = await _service.GetAuctionsAsync(status);
         return Ok(auctions);
     }
+        [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var details = await _service.GetAuctionAsync(id);
+        if (details == null)
+            return NotFound(new { message = $"Auction {id} not found." });
+        return Ok(details);
+    }
 }
