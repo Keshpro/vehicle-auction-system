@@ -1,31 +1,29 @@
-using System.Net;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 
 [ApiController]
+[Authorize(Roles = "Admin")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("api/admin/users")]
 public class AdminUsersController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly IWebHostEnvironment _environment;
-
-    public AdminUsersController(
-        IConfiguration configuration,
-        IWebHostEnvironment environment)
+    public AdminUsersController(IConfiguration configuration)
     {
         _configuration = configuration;
-        _environment = environment;
+    }
+
+    [HttpGet("session")]
+    public IActionResult GetSession()
+    {
+        return Ok(new { fullName = User.Identity?.Name });
     }
 
     [HttpGet]
     public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
     {
-            // Local testing while the team's admin login is being built.
-            if (!IsLocalDevelopmentRequest())
-    {
-        return NotFound();
-    }
-
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -58,15 +56,11 @@ public class AdminUsersController : ControllerBase
 
         return Ok(users);
     }
-        [HttpGet("pending-bidders")]
+
+    [HttpGet("pending-bidders")]
     public async Task<IActionResult> GetPendingBidders(
         CancellationToken cancellationToken)
     {
-        if (!IsLocalDevelopmentRequest())
-        {
-            return NotFound();
-        }
-
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -97,13 +91,14 @@ public class AdminUsersController : ControllerBase
 
         return Ok(bidders);
     }
-        [HttpPut("{userId:int}/approval")]
+
+    [HttpPut("{userId:int}/approval")]
     public async Task<IActionResult> ApproveBidder(
         int userId, CancellationToken cancellationToken)
     {
-        if (!IsLocalDevelopmentRequest())
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var adminId))
         {
-            return NotFound();
+            return Forbid();
         }
 
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -111,32 +106,23 @@ public class AdminUsersController : ControllerBase
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            UPDATE bidder_profiles AS bp
-            JOIN users AS bidder ON bidder.user_id = bp.user_id
-            JOIN users AS approver ON approver.email = 'admin@example.com'
-            SET bp.approval_status = 'Approved',
-                bp.approved_by = approver.user_id,
-                bp.approved_at = NOW()
-            WHERE bp.user_id = @userId
-              AND bidder.email = 'bidder@example.com'
-              AND bp.approval_status = 'Pending';
+            UPDATE bidder_profiles
+            SET approval_status = 'Approved',
+                approved_by = @adminId,
+                approved_at = NOW()
+            WHERE user_id = @userId AND approval_status = 'Pending';
             """;
 
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@adminId", adminId);
 
         var rowsUpdated = await command.ExecuteNonQueryAsync(cancellationToken);
         if (rowsUpdated == 0)
         {
-            return Conflict(new { message = "The demo bidder is no longer pending or could not be found." });
+            return Conflict(new { message = "The bidder is no longer pending or could not be found." });
         }
 
         return Ok(new { userId, approvalStatus = "Approved" });
-    }
-    private bool IsLocalDevelopmentRequest()
-    {
-        return _environment.IsDevelopment()
-            && HttpContext.Connection.RemoteIpAddress is { } remoteAddress
-            && IPAddress.IsLoopback(remoteAddress);
     }
 }
