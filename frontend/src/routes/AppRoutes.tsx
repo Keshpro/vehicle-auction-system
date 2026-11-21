@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-
+import RegisterPage from "../features/auth/pages/RegisterPage";
 import MainLayout from "../components/layout/MainLayout";
 import Home from "../pages/Home";
 import Placeholder from "../pages/Placeholder";
@@ -8,7 +8,7 @@ import LiveAuctionPage from "../pages/LiveAuctionPage";
 import UserManagement from "../UserManagement";
 import BidderApproval from "../BidderApproval";
 import AdminDashboard from "../pages/AdminDashboard";
-
+import LoginPage from "../features/auth/pages/LoginPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -28,8 +28,8 @@ export default function AppRoutes() {
         <Route path="vehicles/*" element={<VehicleRoutes />} />
 
         {/* Authentication */}
-        <Route path="login" element={<Placeholder />} />
-        <Route path="register" element={<Placeholder />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
 
         <Route path="about" element={<Placeholder />} />
         <Route path="*" element={<Placeholder />} />
