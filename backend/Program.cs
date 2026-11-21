@@ -32,6 +32,10 @@ builder.Services.AddAuthentication(
 
 builder.Services.AddAuthorization();
 
+// Register Database Migration Service
+builder.Services.AddScoped<
+    VehicleAuction.Api.Services.DatabaseMigrationService>();
+
 // Register Vehicle Repository
 builder.Services.AddScoped<VehicleRepository>();
 
@@ -46,6 +50,18 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Run database migrations only in Development
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+
+    var migrationService = scope.ServiceProvider
+        .GetRequiredService<
+            VehicleAuction.Api.Services.DatabaseMigrationService>();
+
+    await migrationService.ApplyMigrationsAsync();
+}
 
 // Middleware
 app.UseCors("ReactFrontend");
