@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,101 +9,326 @@ import {
   Settings2,
   Palette,
   Tag,
-  Pencil,
   CarFront,
+  LoaderCircle,
+  AlertCircle,
+  Hash,
+  MapPin,
+  UserRound,
+  ImageOff,
 } from "lucide-react";
 
-const demoVehicles = [
-  {
-    id: 1,
-    title: "Toyota Prius 2018",
-    brand: "Toyota",
-    model: "Prius",
-    year: 2018,
-    mileage: 65000,
-    fuelType: "Hybrid",
-    transmission: "Automatic",
-    color: "White",
-    startingPrice: 8500000,
-    status: "approved",
-    description:
-      "Well maintained Toyota Prius with excellent fuel efficiency, comfortable interior and reliable performance.",
-    images: [
-      "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=1200",
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200",
-    ],
-  },
-  {
-    id: 2,
-    title: "Honda Civic 2019",
-    brand: "Honda",
-    model: "Civic",
-    year: 2019,
-    mileage: 48000,
-    fuelType: "Petrol",
-    transmission: "Automatic",
-    color: "Black",
-    startingPrice: 9200000,
-    status: "pending",
-    description:
-      "Honda Civic in excellent condition with a modern interior and smooth driving experience.",
-    images: [
-      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=1200",
-    ],
-  },
-];
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000"
+).replace(/\/$/, "");
+
+// VEHICLE MODEL
+interface Vehicle {
+  vehicleId: number;
+  consignorId: number;
+  yardLocationId: number;
+  registrationNumber: string | null;
+  chassisNumber: string;
+  make: string;
+  model: string;
+  manufactureYear: number;
+  colour: string | null;
+  mileageKm: number | null;
+  fuelType: string | null;
+  transmission: string | null;
+  description: string | null;
+  createdAt: string;
+}
+
+// VEHICLE PHOTO MODEL
+interface VehiclePhoto {
+  photoId: number;
+  vehicleId: number;
+  photoUrl: string;
+  isCover: boolean;
+  displayOrder: number;
+}
 
 export default function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const [selectedImage, setSelectedImage] = useState(0);
 
-  const vehicle = demoVehicles.find(
-    (item) => item.id === Number(id)
+  // Vehicle state
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Photo gallery state
+  const [photos, setPhotos] = useState<VehiclePhoto[]>([]);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(
+    null
   );
 
-  if (!vehicle) {
+  // ==========================================
+  // LOAD VEHICLE DETAILS
+  // ==========================================
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadVehicle() {
+      setLoading(true);
+      setError(null);
+      setVehicle(null);
+
+      if (!id || !/^[1-9]\d*$/.test(id)) {
+        setError("Invalid vehicle ID.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/vehicles/${id}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+            signal: controller.signal,
+          }
+        );
+
+        if (response.status === 404) {
+          if (!controller.signal.aborted) {
+            setError("Vehicle not found.");
+          }
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load vehicle (${response.status}).`
+          );
+        }
+
+        const data: Vehicle = await response.json();
+
+        if (!controller.signal.aborted) {
+          setVehicle(data);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load vehicle."
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadVehicle();
+
+    return () => controller.abort();
+  }, [id]);
+
+  // ==========================================
+  // LOAD VEHICLE PHOTOS
+  // ==========================================
+  useEffect(() => {
+    const controller = new AbortController();
+
+    setPhotos([]);
+    setSelectedImage(0);
+    setPhotosError(null);
+
+    if (!id || !/^[1-9]\d*$/.test(id)) {
+      setPhotosLoading(false);
+      return () => controller.abort();
+    }
+
+    async function loadPhotos() {
+      setPhotosLoading(true);
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/vehicles/${id}/photos`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load photos (${response.status}).`
+          );
+        }
+
+        const data: VehiclePhoto[] = await response.json();
+
+        if (!controller.signal.aborted) {
+          // Cover photo first, then display order
+          const sortedPhotos = [...data].sort((a, b) => {
+            if (a.isCover !== b.isCover) {
+              return a.isCover ? -1 : 1;
+            }
+
+            return a.displayOrder - b.displayOrder;
+          });
+
+          setPhotos(sortedPhotos);
+          setSelectedImage(0);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setPhotos([]);
+          setPhotosError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load vehicle photos."
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setPhotosLoading(false);
+        }
+      }
+    }
+
+    void loadPhotos();
+
+    return () => controller.abort();
+  }, [id]);
+
+  // ==========================================
+  // LOADING SCREEN
+  // ==========================================
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0b0d] p-12 text-center text-white">
-        <h1 className="text-3xl font-bold">Vehicle Not Found</h1>
-        <Link
-          to="/vehicles"
-          className="mt-6 inline-block text-[#c6a667]"
-        >
-          Back to Vehicles
-        </Link>
-      </div>
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0b0b0d] text-white">
+        <LoaderCircle
+          size={42}
+          className="animate-spin text-[#c6a667]"
+        />
+        <p className="text-zinc-400">
+          Loading vehicle details...
+        </p>
+      </main>
     );
   }
 
+  // ==========================================
+  // ERROR SCREEN
+  // ==========================================
+  if (error || !vehicle) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0b0b0d] px-6 text-center text-white">
+        <AlertCircle
+          size={48}
+          className="text-[#c6a667]"
+        />
+
+        <h1 className="mt-5 text-3xl font-bold">
+          Vehicle Details Unavailable
+        </h1>
+
+        <p className="mt-3 max-w-md text-zinc-400">
+          {error || "Vehicle not found."}
+        </p>
+
+        <Link
+          to="/vehicles/browse"
+          className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-6 py-3 font-semibold text-black hover:bg-[#e5c785]"
+        >
+          <ArrowLeft size={18} />
+          Back to Browse Vehicles
+        </Link>
+      </main>
+    );
+  }
+
+  const vehicleTitle =
+    `${vehicle.make} ${vehicle.model} ${vehicle.manufactureYear}`;
+
   const specifications = [
-    { label: "Brand", value: vehicle.brand, icon: CarFront },
-    { label: "Model", value: vehicle.model, icon: Tag },
-    { label: "Year", value: vehicle.year, icon: CalendarDays },
+    {
+      label: "Brand",
+      value: vehicle.make,
+      icon: CarFront,
+    },
+    {
+      label: "Model",
+      value: vehicle.model,
+      icon: Tag,
+    },
+    {
+      label: "Manufacture Year",
+      value: String(vehicle.manufactureYear),
+      icon: CalendarDays,
+    },
     {
       label: "Mileage",
-      value: `${vehicle.mileage.toLocaleString()} km`,
+      value:
+        vehicle.mileageKm == null
+          ? "Not specified"
+          : `${vehicle.mileageKm.toLocaleString()} km`,
       icon: Gauge,
     },
-    { label: "Fuel Type", value: vehicle.fuelType, icon: Fuel },
+    {
+      label: "Fuel Type",
+      value: vehicle.fuelType || "Not specified",
+      icon: Fuel,
+    },
     {
       label: "Transmission",
-      value: vehicle.transmission,
+      value: vehicle.transmission || "Not specified",
       icon: Settings2,
     },
-    { label: "Color", value: vehicle.color, icon: Palette },
+    {
+      label: "Colour",
+      value: vehicle.colour || "Not specified",
+      icon: Palette,
+    },
+    {
+      label: "Registration Number",
+      value: vehicle.registrationNumber || "Not specified",
+      icon: Hash,
+    },
+    {
+      label: "Chassis Number",
+      value: vehicle.chassisNumber,
+      icon: Hash,
+    },
+    {
+      label: "Yard Location ID",
+      value: String(vehicle.yardLocationId),
+      icon: MapPin,
+    },
+    {
+      label: "Consignor ID",
+      value: String(vehicle.consignorId),
+      icon: UserRound,
+    },
   ];
 
   return (
     <main className="min-h-screen bg-[#0b0b0d] px-6 py-12 text-white">
       <div className="mx-auto max-w-7xl">
+        {/* BACK BUTTON */}
         <Link
-          to="/vehicles"
-          className="mb-8 inline-flex items-center gap-2 text-zinc-400 hover:text-[#c6a667]"
+          to="/vehicles/browse"
+          className="mb-8 inline-flex items-center gap-2 text-zinc-400 transition hover:text-[#c6a667]"
         >
           <ArrowLeft size={18} />
-          Back to Vehicles
+          Back to Browse Vehicles
         </Link>
 
+        {/* PAGE HEADING */}
         <div className="mb-10 flex flex-wrap items-center justify-between gap-5">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-[#c6a667]">
@@ -111,54 +336,113 @@ export default function VehicleDetailsPage() {
             </p>
 
             <h1 className="mt-3 text-4xl font-semibold">
-              {vehicle.title}
+              {vehicleTitle}
             </h1>
 
             <p className="mt-3 text-zinc-400">
-              Vehicle ID: #{vehicle.id}
+              Vehicle ID: #{vehicle.vehicleId}
             </p>
           </div>
 
-          <Link
-            to={`/vehicles/${vehicle.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-6 py-3 font-semibold text-black hover:bg-[#e5c785]"
-          >
-            <Pencil size={18} />
-            Edit Vehicle
-          </Link>
+          <div className="inline-flex items-center gap-2 rounded-lg border border-[#c6a667]/40 px-6 py-3 font-semibold text-[#c6a667]">
+            <CarFront size={18} />
+            Vehicle Record
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
+          {/* LEFT CONTENT */}
           <div className="space-y-6 lg:col-span-2">
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#171719]">
-              <img
-                src={vehicle.images[selectedImage]}
-                alt={vehicle.title}
-                className="h-[420px] w-full object-cover"
-              />
-            </div>
 
-            <div className="flex gap-4 overflow-x-auto">
-              {vehicle.images.map((image, index) => (
-                <button
-                  key={image}
-                  type="button"
-                  onClick={() => setSelectedImage(index)}
-                  className={`overflow-hidden rounded-lg border-2 ${
-                    selectedImage === index
-                      ? "border-[#c6a667]"
-                      : "border-white/10"
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt={`Vehicle view ${index + 1}`}
-                    className="h-24 w-32 object-cover"
+            {/* ================================== */}
+            {/* VEHICLE PHOTO GALLERY */}
+            {/* ================================== */}
+            <section className="space-y-4">
+              {photosLoading ? (
+                <div className="flex h-[360px] flex-col items-center justify-center rounded-xl border border-white/10 bg-[#171719]">
+                  <LoaderCircle
+                    size={38}
+                    className="animate-spin text-[#c6a667]"
                   />
-                </button>
-              ))}
-            </div>
+                  <p className="mt-4 text-sm text-zinc-400">
+                    Loading vehicle photos...
+                  </p>
+                </div>
+              ) : photos.length > 0 ? (
+                <>
+                  {/* MAIN IMAGE */}
+                  <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#171719]">
+                    <img
+                      src={photos[selectedImage]?.photoUrl}
+                      alt={vehicleTitle}
+                      className="h-[420px] w-full object-cover"
+                    />
 
+                    {photos[selectedImage]?.isCover && (
+                      <span className="absolute left-5 top-5 rounded-md bg-[#c6a667] px-4 py-2 text-xs font-bold uppercase tracking-wider text-black">
+                        Cover Photo
+                      </span>
+                    )}
+
+                    <div className="absolute bottom-5 right-5 rounded-md bg-black/70 px-4 py-2 text-sm text-white">
+                      {selectedImage + 1} / {photos.length}
+                    </div>
+                  </div>
+
+                  {/* PHOTO THUMBNAILS */}
+                  {photos.length > 1 && (
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {photos.map((photo, index) => (
+                        <button
+                          key={photo.photoId}
+                          type="button"
+                          onClick={() => setSelectedImage(index)}
+                          aria-label={`View photo ${index + 1}`}
+                          className={`relative shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                            selectedImage === index
+                              ? "border-[#c6a667]"
+                              : "border-white/10 hover:border-white/30"
+                          }`}
+                        >
+                          <img
+                            src={photo.photoUrl}
+                            alt={`${vehicleTitle} photo ${index + 1}`}
+                            className="h-24 w-32 object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex h-[360px] flex-col items-center justify-center rounded-xl border border-white/10 bg-[#171719] px-5 text-center">
+                  <ImageOff
+                    size={64}
+                    className="text-[#c6a667]/60"
+                  />
+
+                  <h3 className="mt-5 text-lg font-semibold">
+                    No Vehicle Photos Available
+                  </h3>
+
+                  <p className="mt-2 max-w-md text-sm leading-6 text-zinc-400">
+                    {photosError
+                      ? "Vehicle photos could not be loaded."
+                      : "Photos have not been added for this vehicle yet."}
+                  </p>
+
+                  {photosError && (
+                    <p className="mt-3 text-xs text-red-400">
+                      {photosError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+
+            {/* ================================== */}
+            {/* VEHICLE SPECIFICATIONS */}
+            {/* ================================== */}
             <section className="rounded-xl border border-white/10 bg-[#171719] p-7">
               <h2 className="mb-6 text-2xl font-semibold">
                 Vehicle Specifications
@@ -175,14 +459,15 @@ export default function VehicleDetailsPage() {
                     >
                       <Icon
                         size={22}
-                        className="text-[#c6a667]"
+                        className="shrink-0 text-[#c6a667]"
                       />
 
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm text-zinc-400">
                           {item.label}
                         </p>
-                        <p className="mt-1 font-medium">
+
+                        <p className="mt-1 break-words font-medium">
                           {item.value}
                         </p>
                       </div>
@@ -192,42 +477,71 @@ export default function VehicleDetailsPage() {
               </div>
             </section>
 
+            {/* ================================== */}
+            {/* VEHICLE DESCRIPTION */}
+            {/* ================================== */}
             <section className="rounded-xl border border-white/10 bg-[#171719] p-7">
               <h2 className="mb-4 text-2xl font-semibold">
                 Description
               </h2>
 
-              <p className="leading-8 text-zinc-400">
-                {vehicle.description}
+              <p className="whitespace-pre-wrap leading-8 text-zinc-400">
+                {vehicle.description ||
+                  "No vehicle description available."}
               </p>
             </section>
           </div>
 
+          {/* ================================== */}
+          {/* RIGHT SIDEBAR */}
+          {/* ================================== */}
           <aside>
             <div className="rounded-xl border border-[#c6a667]/30 bg-[#171719] p-7">
               <p className="text-sm uppercase tracking-wider text-zinc-400">
-                Starting Price
+                Vehicle Information
               </p>
 
               <p className="mt-3 text-3xl font-bold text-[#c6a667]">
-                LKR {vehicle.startingPrice.toLocaleString()}
+                #{vehicle.vehicleId}
               </p>
 
               <div className="my-7 border-t border-white/10" />
 
               <p className="text-sm text-zinc-400">
-                Vehicle Status
+                Registration Number
               </p>
 
-              <span className="mt-3 inline-block rounded-full bg-[#c6a667]/15 px-4 py-2 text-sm font-medium capitalize text-[#c6a667]">
-                {vehicle.status}
-              </span>
-
-              <p className="mt-7 text-sm leading-6 text-zinc-500">
-                This is a demonstration vehicle record.
-                Live information will be available after
-                backend integration.
+              <p className="mt-2 font-semibold">
+                {vehicle.registrationNumber || "Not specified"}
               </p>
+
+              <div className="my-6 border-t border-white/10" />
+
+              <p className="text-sm text-zinc-400">
+                Record Created
+              </p>
+
+              <p className="mt-2 font-semibold">
+                {vehicle.createdAt
+                  ? new Date(vehicle.createdAt).toLocaleDateString()
+                  : "Not available"}
+              </p>
+
+              <div className="my-6 border-t border-white/10" />
+
+              <p className="text-sm leading-6 text-zinc-500">
+                This vehicle information is retrieved from
+                the Vehicle Auction API.
+                Auction pricing and status will be displayed
+                after auction module integration.
+              </p>
+
+              <Link
+                to="/auctions"
+                className="mt-7 flex w-full items-center justify-center rounded-lg bg-[#c6a667] px-5 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
+              >
+                Explore Auctions
+              </Link>
             </div>
           </aside>
         </div>

@@ -21,6 +21,7 @@ builder.Services.AddScoped<AuctionService>();
 
 // Vehicle Management
 builder.Services.AddScoped<VehicleRepository>();
+builder.Services.AddScoped<VehiclePhotoRepository>();
 
 // Automated Database Migration
 builder.Services.AddScoped<DatabaseMigrationService>();
