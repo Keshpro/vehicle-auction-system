@@ -24,6 +24,13 @@ public class AuthController : ControllerBase
                 "Database connection string is missing.");
     }
 
+    [HttpDelete("session")]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return NoContent();
+    }
+
     // Registration request data
     public class RegisterRequest
     {
@@ -234,7 +241,8 @@ public async Task<IActionResult> Login(
         LEFT JOIN bidder_profiles bp
             ON u.user_id = bp.user_id
         WHERE u.email = @email
-          AND r.role_name = 'Bidder'
+          AND r.role_name IN ('Admin', 'Bidder')
+        ORDER BY CASE WHEN r.role_name = 'Admin' THEN 0 ELSE 1 END
         LIMIT 1
         """;
 
@@ -258,11 +266,17 @@ public async Task<IActionResult> Login(
     string userEmail = reader.GetString("email");
     string passwordHash = reader.GetString("password_hash");
     string accountStatus = reader.GetString("account_status");
+    string role = reader.GetString("role_name");
 
     string approvalStatus =
         reader.IsDBNull(reader.GetOrdinal("approval_status"))
             ? "Not Applicable"
             : reader.GetString("approval_status");
+
+    if (passwordHash == "DEMO_ONLY_NO_LOGIN")
+    {
+        return Unauthorized(new { message = "This account is inactive." });
+    }
 
     var verificationResult =
         _passwordHasher.VerifyHashedPassword(
@@ -292,7 +306,7 @@ public async Task<IActionResult> Login(
         new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
         new Claim(ClaimTypes.Name, fullName),
         new Claim(ClaimTypes.Email, userEmail),
-        new Claim(ClaimTypes.Role, "Bidder")
+        new Claim(ClaimTypes.Role, role)
     };
 
     var identity = new ClaimsIdentity(
@@ -312,7 +326,7 @@ public async Task<IActionResult> Login(
         userId,
         fullName,
         email = userEmail,
-        role = "Bidder",
+        role,
         approvalStatus
     });
 }

@@ -48,6 +48,15 @@ export function registerBidder(data: RegisterData) {
   return sendRequest("register", data);
 }
 
-export function loginBidder(data: LoginData) {
+export function login(data: LoginData) {
   return sendRequest("login", data);
+}
+
+export async function logout() {
+  const response = await fetch(`${API_URL}/session`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) throw new Error("Could not log out. Try again.");
 }

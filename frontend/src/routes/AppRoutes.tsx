@@ -8,17 +8,18 @@ import LiveAuctionPage from "../pages/LiveAuctionPage";
 import UserManagement from "../UserManagement";
 import BidderApproval from "../BidderApproval";
 import AdminDashboard from "../pages/AdminDashboard";
+import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
 export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
         <Route index element={<Home />} />
-        <Route path="admin/users" element={<UserManagement />} />
-        <Route path="admin/bidders" element={<BidderApproval />} />
-        {import.meta.env.DEV && (
-        <Route path="admin" element={<AdminDashboard />} />
-        )}
+        <Route path="admin" element={<AdminRoutes />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="bidders" element={<BidderApproval />} />
+        </Route>
 
         {/* Live Auction Page */}
         <Route path="auctions" element={<LiveAuctionPage />} />
