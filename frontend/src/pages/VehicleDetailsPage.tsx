@@ -18,6 +18,8 @@ import {
   ImageOff,
 } from "lucide-react";
 
+import AddVehiclePhotoForm from "../components/vehicles/AddVehiclePhotoForm";
+
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
   "http://localhost:5000"
@@ -53,18 +55,21 @@ interface VehiclePhoto {
 export default function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();
 
-  // Vehicle state
+  // VEHICLE STATES
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Photo gallery state
+  // PHOTO STATES
   const [photos, setPhotos] = useState<VehiclePhoto[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState<string | null>(
     null
   );
+
+  // REFRESH GALLERY AFTER ADDING A PHOTO
+  const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
 
   // ==========================================
   // LOAD VEHICLE DETAILS
@@ -172,13 +177,16 @@ export default function VehicleDetailsPage() {
         const data: VehiclePhoto[] = await response.json();
 
         if (!controller.signal.aborted) {
-          // Cover photo first, then display order
           const sortedPhotos = [...data].sort((a, b) => {
             if (a.isCover !== b.isCover) {
               return a.isCover ? -1 : 1;
             }
 
-            return a.displayOrder - b.displayOrder;
+            if (a.displayOrder !== b.displayOrder) {
+              return a.displayOrder - b.displayOrder;
+            }
+
+            return a.photoId - b.photoId;
           });
 
           setPhotos(sortedPhotos);
@@ -203,7 +211,14 @@ export default function VehicleDetailsPage() {
     void loadPhotos();
 
     return () => controller.abort();
-  }, [id]);
+  }, [id, photoRefreshKey]);
+
+  // ==========================================
+  // REFRESH PHOTO GALLERY
+  // ==========================================
+  function handlePhotoAdded() {
+    setPhotoRefreshKey((previous) => previous + 1);
+  }
 
   // ==========================================
   // LOADING SCREEN
@@ -215,6 +230,7 @@ export default function VehicleDetailsPage() {
           size={42}
           className="animate-spin text-[#c6a667]"
         />
+
         <p className="text-zinc-400">
           Loading vehicle details...
         </p>
@@ -255,6 +271,9 @@ export default function VehicleDetailsPage() {
   const vehicleTitle =
     `${vehicle.make} ${vehicle.model} ${vehicle.manufactureYear}`;
 
+  // ==========================================
+  // VEHICLE SPECIFICATIONS
+  // ==========================================
   const specifications = [
     {
       label: "Brand",
@@ -353,7 +372,6 @@ export default function VehicleDetailsPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* LEFT CONTENT */}
           <div className="space-y-6 lg:col-span-2">
-
             {/* ================================== */}
             {/* VEHICLE PHOTO GALLERY */}
             {/* ================================== */}
@@ -364,13 +382,14 @@ export default function VehicleDetailsPage() {
                     size={38}
                     className="animate-spin text-[#c6a667]"
                   />
+
                   <p className="mt-4 text-sm text-zinc-400">
                     Loading vehicle photos...
                   </p>
                 </div>
               ) : photos.length > 0 ? (
                 <>
-                  {/* MAIN IMAGE */}
+                  {/* MAIN PHOTO */}
                   <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#171719]">
                     <img
                       src={photos[selectedImage]?.photoUrl}
@@ -441,6 +460,14 @@ export default function VehicleDetailsPage() {
             </section>
 
             {/* ================================== */}
+            {/* ADD VEHICLE PHOTO FORM */}
+            {/* ================================== */}
+            <AddVehiclePhotoForm
+              vehicleId={vehicle.vehicleId}
+              onPhotoAdded={handlePhotoAdded}
+            />
+
+            {/* ================================== */}
             {/* VEHICLE SPECIFICATIONS */}
             {/* ================================== */}
             <section className="rounded-xl border border-white/10 bg-[#171719] p-7">
@@ -478,7 +505,7 @@ export default function VehicleDetailsPage() {
             </section>
 
             {/* ================================== */}
-            {/* VEHICLE DESCRIPTION */}
+            {/* DESCRIPTION */}
             {/* ================================== */}
             <section className="rounded-xl border border-white/10 bg-[#171719] p-7">
               <h2 className="mb-4 text-2xl font-semibold">
@@ -530,10 +557,10 @@ export default function VehicleDetailsPage() {
               <div className="my-6 border-t border-white/10" />
 
               <p className="text-sm leading-6 text-zinc-500">
-                This vehicle information is retrieved from
-                the Vehicle Auction API.
-                Auction pricing and status will be displayed
-                after auction module integration.
+                Vehicle information is retrieved from the
+                Vehicle Auction API. Auction pricing and
+                status will appear after auction module
+                integration.
               </p>
 
               <Link
