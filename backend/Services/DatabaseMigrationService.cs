@@ -1,3 +1,4 @@
+
 using System.Security.Cryptography;
 using MySqlConnector;
 
@@ -25,6 +26,40 @@ public sealed class DatabaseMigrationService
                 "migrations"));
     }
 
+    // Check SQL migration files without connecting to MySQL
+    public void CheckMigrationFiles()
+    {
+        Console.WriteLine("=== Migration File Detection ===");
+        Console.WriteLine($"Migration folder: {_migrationsPath}");
+
+        if (!Directory.Exists(_migrationsPath))
+        {
+            Console.WriteLine("[ERROR] Migration folder not found.");
+            return;
+        }
+
+        var files = Directory
+            .GetFiles(_migrationsPath, "*.sql")
+            .OrderBy(Path.GetFileName, StringComparer.Ordinal)
+            .ToList();
+
+        if (files.Count == 0)
+        {
+            Console.WriteLine("[INFO] No migration SQL files found.");
+            return;
+        }
+
+        Console.WriteLine($"Total migration files: {files.Count}");
+
+        foreach (var file in files)
+        {
+            Console.WriteLine($"[FOUND] {Path.GetFileName(file)}");
+        }
+
+        Console.WriteLine("=== File Detection Completed ===");
+    }
+
+    // Apply pending migrations to MySQL
     public async Task ApplyMigrationsAsync()
     {
         if (!Directory.Exists(_migrationsPath))

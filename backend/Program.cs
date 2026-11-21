@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using VehicleAuction.Api.Repositories;
 
@@ -5,7 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register Controllers
 builder.Services.AddControllers();
-builder.Services.AddScoped<VehicleAuction.Api.Repositories.AuctionRepository>();
+
+// Register Auction Repository and Service
+builder.Services.AddScoped<AuctionRepository>();
 builder.Services.AddScoped<VehicleAuction.Api.Services.AuctionService>();
 
 // Authentication for Registration and Login
@@ -51,7 +54,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Run database migrations only in Development
+// ==========================================
+// DATABASE MIGRATION FILE DETECTION TEST
+// ==========================================
+
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -60,10 +66,19 @@ if (app.Environment.IsDevelopment())
         .GetRequiredService<
             VehicleAuction.Api.Services.DatabaseMigrationService>();
 
-    await migrationService.ApplyMigrationsAsync();
+    // STEP 1: Detect SQL migration files only
+    migrationService.CheckMigrationFiles();
+
+    // STEP 2: Automatic migration execution
+    // Temporarily disabled during file detection testing
+    // await migrationService.ApplyMigrationsAsync();
 }
 
-// Middleware
+// ==========================================
+// APPLICATION MIDDLEWARE
+// ==========================================
+
+// Configure CORS
 app.UseCors("ReactFrontend");
 
 // Enable Authentication
