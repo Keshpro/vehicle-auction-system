@@ -10,19 +10,43 @@ namespace VehicleAuction.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+
 public class AuthController : ControllerBase
 {
     private readonly string _connectionString;
+    private readonly ILogger<AuthController> _logger;
 
     private readonly PasswordHasher<object> _passwordHasher = new();
 
-    public AuthController(IConfiguration configuration)
+    public AuthController(
+        IConfiguration configuration,
+        ILogger<AuthController> logger)
     {
         _connectionString =
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
                 "Database connection string is missing.");
+
+        _logger = logger;
     }
+    [HttpGet("session")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public IActionResult GetSession()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var fullName = User.FindFirstValue(ClaimTypes.Name);
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var role = User.FindFirstValue(ClaimTypes.Role);
+
+        return Ok(new
+        {
+            userId,
+            fullName,
+            email,
+            role
+        });
+    }
+
 
     [HttpDelete("session")]
     public async Task<IActionResult> Logout()
@@ -191,40 +215,47 @@ public class AuthController : ControllerBase
                 message = "Email is already registered."
             });
         }
-        catch
+
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
+
+            _logger.LogError(
+                ex,
+                "Bidder registration failed for email {Email}",
+                email);
 
             return StatusCode(500, new
             {
                 message = "Registration failed. Please try again."
             });
         }
+
     }
     // LOGIN REQUEST DATA
-public class LoginRequest
-{
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = "";
+    public class LoginRequest
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
 
-    [Required]
-    public string Password { get; set; } = "";
-}
+        [Required]
+        public string Password { get; set; } = "";
+    }
 
-// LOGIN API
-[HttpPost("login")]
-public async Task<IActionResult> Login(
-    [FromBody] LoginRequest request)
-{
-    string email = request.Email.Trim().ToLowerInvariant();
+    // LOGIN API
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequest request)
+    {
+        string email = request.Email.Trim().ToLowerInvariant();
 
-    await using var connection =
-        new MySqlConnection(_connectionString);
+        await using var connection =
+            new MySqlConnection(_connectionString);
 
-    await connection.OpenAsync();
+        await connection.OpenAsync();
 
-    const string sql = """
+        const string sql = """
         SELECT
             u.user_id,
             u.full_name,
@@ -246,62 +277,62 @@ public async Task<IActionResult> Login(
         LIMIT 1
         """;
 
-    await using var command =
-        new MySqlCommand(sql, connection);
+        await using var command =
+            new MySqlCommand(sql, connection);
 
-    command.Parameters.AddWithValue("@email", email);
+        command.Parameters.AddWithValue("@email", email);
 
-    await using var reader = await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
-    if (!await reader.ReadAsync())
-    {
-        return Unauthorized(new
+        if (!await reader.ReadAsync())
         {
-            message = "Invalid email or password."
-        });
-    }
+            return Unauthorized(new
+            {
+                message = "Invalid email or password."
+            });
+        }
 
-    int userId = reader.GetInt32("user_id");
-    string fullName = reader.GetString("full_name");
-    string userEmail = reader.GetString("email");
-    string passwordHash = reader.GetString("password_hash");
-    string accountStatus = reader.GetString("account_status");
-    string role = reader.GetString("role_name");
+        int userId = reader.GetInt32("user_id");
+        string fullName = reader.GetString("full_name");
+        string userEmail = reader.GetString("email");
+        string passwordHash = reader.GetString("password_hash");
+        string accountStatus = reader.GetString("account_status");
+        string role = reader.GetString("role_name");
 
-    string approvalStatus =
-        reader.IsDBNull(reader.GetOrdinal("approval_status"))
-            ? "Not Applicable"
-            : reader.GetString("approval_status");
+        string approvalStatus =
+            reader.IsDBNull(reader.GetOrdinal("approval_status"))
+                ? "Not Applicable"
+                : reader.GetString("approval_status");
 
-    if (passwordHash == "DEMO_ONLY_NO_LOGIN")
-    {
-        return Unauthorized(new { message = "This account is inactive." });
-    }
-
-    var verificationResult =
-        _passwordHasher.VerifyHashedPassword(
-            new object(),
-            passwordHash,
-            request.Password);
-
-    if (verificationResult == PasswordVerificationResult.Failed)
-    {
-        return Unauthorized(new
+        if (passwordHash == "DEMO_ONLY_NO_LOGIN")
         {
-            message = "Invalid email or password."
-        });
-    }
+            return Unauthorized(new { message = "This account is inactive." });
+        }
 
-    if (accountStatus != "Active")
-    {
-        return Unauthorized(new
+        var verificationResult =
+            _passwordHasher.VerifyHashedPassword(
+                new object(),
+                passwordHash,
+                request.Password);
+
+        if (verificationResult == PasswordVerificationResult.Failed)
         {
-            message = "This account is inactive."
-        });
-    }
+            return Unauthorized(new
+            {
+                message = "Invalid email or password."
+            });
+        }
 
-    // Create login claims
-    var claims = new List<Claim>
+        if (accountStatus != "Active")
+        {
+            return Unauthorized(new
+            {
+                message = "This account is inactive."
+            });
+        }
+
+        // Create login claims
+        var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
         new Claim(ClaimTypes.Name, fullName),
@@ -309,25 +340,25 @@ public async Task<IActionResult> Login(
         new Claim(ClaimTypes.Role, role)
     };
 
-    var identity = new ClaimsIdentity(
-        claims,
-        CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme);
 
-    var principal = new ClaimsPrincipal(identity);
+        var principal = new ClaimsPrincipal(identity);
 
-    // Create authentication cookie
-    await HttpContext.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        principal);
+        // Create authentication cookie
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal);
 
-    return Ok(new
-    {
-        message = "Login successful!",
-        userId,
-        fullName,
-        email = userEmail,
-        role,
-        approvalStatus
-    });
-}
+        return Ok(new
+        {
+            message = "Login successful!",
+            userId,
+            fullName,
+            email = userEmail,
+            role,
+            approvalStatus
+        });
+    }
 }

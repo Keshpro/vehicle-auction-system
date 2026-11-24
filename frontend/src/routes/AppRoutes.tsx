@@ -5,11 +5,13 @@ import Home from "../pages/Home";
 import Placeholder from "../pages/Placeholder";
 import VehicleRoutes from "./VehicleRoutes";
 import LiveAuctionPage from "../pages/LiveAuctionPage";
+import AuctionListPage from "../features/auctions/pages/AuctionListPage";
 import UserManagement from "../UserManagement";
 import BidderApproval from "../BidderApproval";
 import AdminDashboard from "../pages/AdminDashboard";
 import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
+import BidAuctionPage from "../features/bidding/pages/BidAuctionPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -21,9 +23,12 @@ export default function AppRoutes() {
           <Route path="bidders" element={<BidderApproval />} />
         </Route>
 
-        {/* Live Auction Page */}
-        <Route path="auctions" element={<LiveAuctionPage />} />
-        <Route path="auctions/:id" element={<Placeholder />} />
+        {/* Real Auction Listing and Bid Management */}
+        <Route path="auctions" element={<AuctionListPage />} />
+        <Route path="auctions/:id" element={<BidAuctionPage />} />
+
+        {/* Original Demo Auction - Preserved */}
+        <Route path="auctions/demo" element={<LiveAuctionPage />} />
 
         {/* Existing Vehicle Module */}
         <Route path="vehicles/*" element={<VehicleRoutes />} />

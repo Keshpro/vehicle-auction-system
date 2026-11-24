@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddScoped<VehicleAuction.Api.Repositories.AuctionRepository>();
 builder.Services.AddScoped<VehicleAuction.Api.Services.AuctionService>();
+builder.Services.AddScoped<BidRepository>();
+builder.Services.AddScoped<VehicleAuction.Api.Services.BidService>();
 
 // Authentication for Registration and Login
 builder.Services.AddAuthentication(
@@ -50,6 +52,43 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+
+
+
+// Global exception handling
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var logger = context.RequestServices
+                .GetRequiredService<ILogger<Program>>();
+
+            var exceptionFeature =
+                context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+
+            var exception = exceptionFeature?.Error;
+
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while processing {Path}",
+                context.Request.Path);
+
+            context.Response.StatusCode =
+                StatusCodes.Status500InternalServerError;
+
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "An unexpected server error occurred. Please try again later."
+            });
+        });
+    });
+}
+
 
 // Run database migrations only in Development
 if (app.Environment.IsDevelopment())
