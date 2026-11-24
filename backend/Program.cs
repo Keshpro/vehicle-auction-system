@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddScoped<VehicleAuction.Api.Repositories.AuctionRepository>();
 builder.Services.AddScoped<VehicleAuction.Api.Services.AuctionService>();
+builder.Services.AddScoped<BidRepository>();
+builder.Services.AddScoped<VehicleAuction.Api.Services.BidService>();
 
 // Authentication for Registration and Login
 builder.Services.AddAuthentication(
