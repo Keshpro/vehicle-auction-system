@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Auction } from '../types/auction.types';
 import { getAuctions } from '../services/auctionService';
 
@@ -53,7 +54,14 @@ export default function AuctionListPage() {
             {auctions.map((a) => (
               <tr key={a.auctionId}>
                 <td style={cell}>{a.auctionId}</td>
-                <td style={cell}>{a.title}</td>
+                <td style={cell}>
+                  <Link
+                    to={`/auctions/${a.auctionId}`}
+                    style={{ color: '#dc2626', fontWeight: 600 }}
+                  >
+                    {a.title} → View Auction
+                  </Link>
+                </td>
                 <td style={cell}>{fmt(a.startsAt)}</td>
                 <td style={cell}>{fmt(a.endsAt)}</td>
                 <td style={cell}>{a.status}</td>
