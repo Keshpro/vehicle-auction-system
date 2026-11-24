@@ -204,10 +204,33 @@ public class BidRepository
                 : Convert.ToDecimal(result);
         }
 
-        // 7. Calculate the minimum acceptable bid.
-        decimal requiredAmount = highestBid == null
-            ? startingPrice
-            : highestBid.Value + minimumIncrement;
+        // 7. Calculate the minimum acceptable bid using the MySQL function.
+        const string requiredAmountSql = """
+    SELECT fn_get_required_bid_amount(
+        @startingPrice,
+        @highestBid,
+        @minimumIncrement
+    );
+    """;
+
+        decimal requiredAmount;
+
+        await using (var requiredAmountCommand =
+            new MySqlCommand(requiredAmountSql, connection, transaction))
+        {
+            requiredAmountCommand.Parameters.AddWithValue(
+                "@startingPrice", startingPrice);
+
+            requiredAmountCommand.Parameters.AddWithValue(
+                "@highestBid",
+                highestBid.HasValue ? highestBid.Value : DBNull.Value);
+
+            requiredAmountCommand.Parameters.AddWithValue(
+                "@minimumIncrement", minimumIncrement);
+
+            requiredAmount = Convert.ToDecimal(
+                await requiredAmountCommand.ExecuteScalarAsync());
+        }
 
         if (amount < requiredAmount)
         {
