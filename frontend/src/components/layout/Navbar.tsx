@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -9,6 +10,7 @@ import {
   ArrowRight,
   ChevronRight,
   Gavel,
+  LogOut,
 } from "lucide-react";
 
 const navLinks = [
@@ -21,15 +23,23 @@ const navLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
+
+  async function handleLogout() {
+    try {
+      await signOut();
+      closeMenu();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Could not log out. Please try again.");
+    }
+  }
 
   const closeMenu = () => setOpen(false);
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative flex items-center whitespace-nowrap text-sm font-semibold transition-colors duration-200 ${
-      isActive
-        ? "text-red-600"
-        : "text-slate-700 hover:text-red-600"
-    }`;
+
 
   const handleHowItWorks = () => {
     closeMenu();
@@ -92,54 +102,52 @@ export default function Navbar() {
             </span>
           </div>
         </Link>
-
-        {/* DESKTOP NAVIGATION */}
-        <div className="hidden items-center gap-5 xl:flex">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              end={link.end}
-              className={linkClass}
-            >
-              {({ isActive }) => (
-                <span className="relative flex h-[78px] items-center">
-                  {link.label}
-
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-t bg-red-600" />
-                  )}
-                </span>
-              )}
-            </NavLink>
-          ))}
-
-          <Link
-            to="/#how-it-works"
-            onClick={handleHowItWorks}
-            className="whitespace-nowrap text-sm font-semibold text-slate-700 transition hover:text-red-600"
-          >
-            How It Works
-          </Link>
-        </div>
-
         {/* DESKTOP ACTIONS */}
         <div className="hidden shrink-0 items-center gap-3 xl:flex">
-          <Link
-            to="/login"
-            className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            <UserRound size={17} />
-            Login
-          </Link>
+          {!loading && (
+            user ? (
+              <>
+                <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5">
+                  <UserRound size={17} className="text-red-600" />
+                  <div className="max-w-[130px]">
+                    <p className="truncate text-sm font-bold text-slate-800">
+                      {user.fullName}
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-500">
+                      {user.role}
+                    </p>
+                  </div>
+                </div>
 
-          <Link
-            to="/register"
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 hover:shadow-md"
-          >
-            Register
-            <ArrowRight size={16} />
-          </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  <UserRound size={17} />
+                  Login
+                </Link>
+
+                <Link
+                  to="/register"
+                  className="flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 hover:shadow-md"
+                >
+                  Register
+                  <ArrowRight size={16} />
+                </Link>
+              </>
+            )
+          )}
         </div>
 
         {/* MOBILE MENU BUTTON */}
@@ -182,10 +190,9 @@ export default function Navbar() {
                 end={link.end}
                 onClick={closeMenu}
                 className={({ isActive }) =>
-                  `flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-red-50 text-red-600"
-                      : "text-slate-700 hover:bg-slate-50"
+                  `flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold transition ${isActive
+                    ? "bg-red-50 text-red-600"
+                    : "text-slate-700 hover:bg-slate-50"
                   }`
                 }
               >
@@ -206,25 +213,54 @@ export default function Navbar() {
 
             <div className="my-3 border-t border-slate-200" />
 
-            {/* LOGIN */}
-            <Link
-              to="/login"
-              onClick={closeMenu}
-              className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
-            >
-              <UserRound size={17} />
-              Login
-            </Link>
 
-            {/* REGISTER */}
-            <Link
-              to="/register"
-              onClick={closeMenu}
-              className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700"
-            >
-              Register Now
-              <ArrowRight size={17} />
-            </Link>
+            {!loading && (
+              user ? (
+                <>
+                  <div className="rounded-xl bg-slate-50 p-4">
+                    <div className="flex items-center gap-2">
+                      <UserRound size={19} className="text-red-600" />
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          {user.fullName}
+                        </p>
+                        <p className="text-xs text-slate-500">{user.role}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <LogOut size={17} />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={closeMenu}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                  >
+                    <UserRound size={17} />
+                    Login
+                  </Link>
+
+                  <Link
+                    to="/register"
+                    onClick={closeMenu}
+                    className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700"
+                  >
+                    Register Now
+                    <ArrowRight size={17} />
+                  </Link>
+                </>
+              )
+            )}
+
 
           </div>
         </div>

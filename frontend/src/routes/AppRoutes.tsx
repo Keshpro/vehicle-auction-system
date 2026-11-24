@@ -10,6 +10,7 @@ import BidderApproval from "../BidderApproval";
 import AdminDashboard from "../pages/AdminDashboard";
 import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
+import BidAuctionPage from "../features/bidding/pages/BidAuctionPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -23,7 +24,10 @@ export default function AppRoutes() {
 
         {/* Live Auction Page */}
         <Route path="auctions" element={<LiveAuctionPage />} />
-        <Route path="auctions/:id" element={<Placeholder />} />
+        <Route
+          path="auctions/:id"
+          element={<BidAuctionPage />}
+        />
 
         {/* Existing Vehicle Module */}
         <Route path="vehicles/*" element={<VehicleRoutes />} />

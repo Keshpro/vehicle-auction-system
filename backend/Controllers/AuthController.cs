@@ -29,6 +29,23 @@ public class AuthController : ControllerBase
 
         _logger = logger;
     }
+    [HttpGet("session")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public IActionResult GetSession()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var fullName = User.FindFirstValue(ClaimTypes.Name);
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var role = User.FindFirstValue(ClaimTypes.Role);
+
+        return Ok(new
+        {
+            userId,
+            fullName,
+            email,
+            role
+        });
+    }
 
 
     [HttpDelete("session")]
