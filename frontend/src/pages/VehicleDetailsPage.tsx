@@ -1,6 +1,10 @@
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useParams,
+} from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -16,6 +20,8 @@ import {
   MapPin,
   UserRound,
   ImageOff,
+  Pencil,
+  CheckCircle2,
 } from "lucide-react";
 
 import AddVehiclePhotoForm from "../components/vehicles/AddVehiclePhotoForm";
@@ -25,7 +31,9 @@ const API_BASE_URL = (
   "http://localhost:5000"
 ).replace(/\/$/, "");
 
+// ==========================================
 // VEHICLE MODEL
+// ==========================================
 interface Vehicle {
   vehicleId: number;
   consignorId: number;
@@ -43,7 +51,9 @@ interface Vehicle {
   createdAt: string;
 }
 
+// ==========================================
 // VEHICLE PHOTO MODEL
+// ==========================================
 interface VehiclePhoto {
   photoId: number;
   vehicleId: number;
@@ -52,15 +62,23 @@ interface VehiclePhoto {
   displayOrder: number;
 }
 
+interface NavigationState {
+  success?: string;
+}
+
 export default function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();
+
+  const location = useLocation();
+  const navigationState =
+    location.state as NavigationState | null;
 
   // VEHICLE STATES
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // PHOTO STATES
+  // PHOTO GALLERY STATES
   const [photos, setPhotos] = useState<VehiclePhoto[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [photosLoading, setPhotosLoading] = useState(false);
@@ -68,11 +86,11 @@ export default function VehicleDetailsPage() {
     null
   );
 
-  // REFRESH GALLERY AFTER ADDING A PHOTO
+  // REFRESH PHOTOS AFTER NEW PHOTO IS ADDED
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
 
   // ==========================================
-  // LOAD VEHICLE DETAILS
+  // LOAD VEHICLE DETAILS FROM API
   // ==========================================
   useEffect(() => {
     const controller = new AbortController();
@@ -139,7 +157,7 @@ export default function VehicleDetailsPage() {
   }, [id]);
 
   // ==========================================
-  // LOAD VEHICLE PHOTOS
+  // LOAD VEHICLE PHOTOS FROM API
   // ==========================================
   useEffect(() => {
     const controller = new AbortController();
@@ -174,7 +192,8 @@ export default function VehicleDetailsPage() {
           );
         }
 
-        const data: VehiclePhoto[] = await response.json();
+        const data: VehiclePhoto[] =
+          await response.json();
 
         if (!controller.signal.aborted) {
           const sortedPhotos = [...data].sort((a, b) => {
@@ -214,7 +233,7 @@ export default function VehicleDetailsPage() {
   }, [id, photoRefreshKey]);
 
   // ==========================================
-  // REFRESH PHOTO GALLERY
+  // REFRESH GALLERY AFTER PHOTO ADD
   // ==========================================
   function handlePhotoAdded() {
     setPhotoRefreshKey((previous) => previous + 1);
@@ -259,7 +278,7 @@ export default function VehicleDetailsPage() {
 
         <Link
           to="/vehicles/browse"
-          className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-6 py-3 font-semibold text-black hover:bg-[#e5c785]"
+          className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-6 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
         >
           <ArrowLeft size={18} />
           Back to Browse Vehicles
@@ -315,7 +334,8 @@ export default function VehicleDetailsPage() {
     },
     {
       label: "Registration Number",
-      value: vehicle.registrationNumber || "Not specified",
+      value:
+        vehicle.registrationNumber || "Not specified",
       icon: Hash,
     },
     {
@@ -335,19 +355,40 @@ export default function VehicleDetailsPage() {
     },
   ];
 
+  const createdDate = vehicle.createdAt
+    ? new Date(vehicle.createdAt)
+    : null;
+
   return (
     <main className="min-h-screen bg-[#0b0b0d] px-6 py-12 text-white">
       <div className="mx-auto max-w-7xl">
-        {/* BACK BUTTON */}
+
+        {/* BACK TO VEHICLE MANAGEMENT */}
         <Link
-          to="/vehicles/browse"
+          to="/vehicles/manage"
           className="mb-8 inline-flex items-center gap-2 text-zinc-400 transition hover:text-[#c6a667]"
         >
           <ArrowLeft size={18} />
-          Back to Browse Vehicles
+          Back to Vehicle Management
         </Link>
 
-        {/* PAGE HEADING */}
+        {/* SUCCESS MESSAGE AFTER EDIT */}
+        {navigationState?.success && (
+          <div
+            role="status"
+            className="mb-8 flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-400"
+          >
+            <CheckCircle2
+              size={20}
+              className="shrink-0"
+            />
+            {navigationState.success}
+          </div>
+        )}
+
+        {/* ================================== */}
+        {/* PAGE HEADER */}
+        {/* ================================== */}
         <div className="mb-10 flex flex-wrap items-center justify-between gap-5">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-[#c6a667]">
@@ -363,18 +404,24 @@ export default function VehicleDetailsPage() {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-lg border border-[#c6a667]/40 px-6 py-3 font-semibold text-[#c6a667]">
-            <CarFront size={18} />
-            Vehicle Record
-          </div>
+          {/* EDIT VEHICLE BUTTON */}
+          <Link
+            to={`/vehicles/${vehicle.vehicleId}/edit`}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#c6a667] px-6 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
+          >
+            <Pencil size={18} />
+            Edit Vehicle
+          </Link>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
+
+          {/* ================================== */}
           {/* LEFT CONTENT */}
+          {/* ================================== */}
           <div className="space-y-6 lg:col-span-2">
-            {/* ================================== */}
+
             {/* VEHICLE PHOTO GALLERY */}
-            {/* ================================== */}
             <section className="space-y-4">
               {photosLoading ? (
                 <div className="flex h-[360px] flex-col items-center justify-center rounded-xl border border-white/10 bg-[#171719]">
@@ -415,9 +462,11 @@ export default function VehicleDetailsPage() {
                         <button
                           key={photo.photoId}
                           type="button"
-                          onClick={() => setSelectedImage(index)}
+                          onClick={() =>
+                            setSelectedImage(index)
+                          }
                           aria-label={`View photo ${index + 1}`}
-                          className={`relative shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                          className={`shrink-0 overflow-hidden rounded-lg border-2 transition ${
                             selectedImage === index
                               ? "border-[#c6a667]"
                               : "border-white/10 hover:border-white/30"
@@ -505,7 +554,7 @@ export default function VehicleDetailsPage() {
             </section>
 
             {/* ================================== */}
-            {/* DESCRIPTION */}
+            {/* VEHICLE DESCRIPTION */}
             {/* ================================== */}
             <section className="rounded-xl border border-white/10 bg-[#171719] p-7">
               <h2 className="mb-4 text-2xl font-semibold">
@@ -539,7 +588,8 @@ export default function VehicleDetailsPage() {
               </p>
 
               <p className="mt-2 font-semibold">
-                {vehicle.registrationNumber || "Not specified"}
+                {vehicle.registrationNumber ||
+                  "Not specified"}
               </p>
 
               <div className="my-6 border-t border-white/10" />
@@ -549,25 +599,35 @@ export default function VehicleDetailsPage() {
               </p>
 
               <p className="mt-2 font-semibold">
-                {vehicle.createdAt
-                  ? new Date(vehicle.createdAt).toLocaleDateString()
+                {createdDate &&
+                !Number.isNaN(createdDate.getTime())
+                  ? createdDate.toLocaleDateString()
                   : "Not available"}
               </p>
 
               <div className="my-6 border-t border-white/10" />
 
               <p className="text-sm leading-6 text-zinc-500">
-                Vehicle information is retrieved from the
-                Vehicle Auction API. Auction pricing and
-                status will appear after auction module
-                integration.
+                Vehicle information is retrieved from
+                the Vehicle Auction API. Auction pricing
+                and status will appear after auction
+                module integration.
               </p>
 
+              {/* EDIT BUTTON IN SIDEBAR */}
               <Link
-                to="/auctions"
-                className="mt-7 flex w-full items-center justify-center rounded-lg bg-[#c6a667] px-5 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
+                to={`/vehicles/${vehicle.vehicleId}/edit`}
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-[#c6a667] px-5 py-3 font-semibold text-black transition hover:bg-[#e5c785]"
               >
-                Explore Auctions
+                <Pencil size={18} />
+                Edit Vehicle
+              </Link>
+
+              <Link
+                to="/vehicles/manage"
+                className="mt-3 flex w-full items-center justify-center rounded-lg border border-white/20 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+              >
+                All Vehicles
               </Link>
             </div>
           </aside>

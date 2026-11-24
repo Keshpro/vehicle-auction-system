@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 
 import VehicleListPage from "../pages/VehicleListPage";
 import AddVehiclePage from "../pages/AddVehiclePage";
+import EditVehiclePage from "../pages/EditVehiclePage";
 import VehicleDetailsPage from "../pages/VehicleDetailsPage";
 import BrowseVehiclesPage from "../pages/BrowseVehiclesPage";
 import BrandVehiclesPage from "../pages/BrandVehiclesPage";
@@ -11,7 +12,10 @@ export default function VehicleRoutes() {
   return (
     <Routes>
       {/* Browse All Vehicle Brands */}
-      <Route index element={<BrowseVehiclesPage />} />
+      <Route
+        index
+        element={<BrowseVehiclesPage />}
+      />
 
       {/* Brand-Specific Vehicle Listings */}
       <Route
@@ -31,7 +35,7 @@ export default function VehicleRoutes() {
         element={<VehicleListPage />}
       />
 
-      {/* Add Vehicle */}
+      {/* Add New Vehicle */}
       <Route
         path="add"
         element={<AddVehiclePage />}
@@ -41,6 +45,12 @@ export default function VehicleRoutes() {
       <Route
         path="browse"
         element={<BrowseVehiclesPage />}
+      />
+
+      {/* Edit Existing Vehicle */}
+      <Route
+        path=":id/edit"
+        element={<EditVehiclePage />}
       />
 
       {/* Vehicle Details */}
