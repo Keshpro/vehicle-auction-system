@@ -34,6 +34,8 @@ public class BidService
         int bidderId,
         PlaceBidRequest request)
     {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
         if (lotId <= 0)
             throw new ArgumentException("Invalid lot ID.");
 
