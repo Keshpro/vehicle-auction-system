@@ -1,6 +1,7 @@
 
 using VehicleAuction.Api.DTOs;
 using VehicleAuction.Api.Repositories;
+using System.Collections.Generic;
 
 namespace VehicleAuction.Api.Services;
 
@@ -19,6 +20,13 @@ public class BidService
             throw new ArgumentException("Invalid lot ID.");
 
         return _repository.GetHighestBidAsync(lotId);
+    }
+    public Task<List<BidResponse>> GetBidHistoryAsync(int lotId)
+    {
+        if (lotId <= 0)
+            throw new ArgumentException("Invalid lot ID.");
+
+        return _repository.GetBidHistoryAsync(lotId);
     }
 
     public Task<BidResponse> PlaceBidAsync(

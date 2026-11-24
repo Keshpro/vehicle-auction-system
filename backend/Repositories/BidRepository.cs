@@ -242,6 +242,7 @@ public class BidRepository
 
         await transaction.CommitAsync();
 
+
         return new BidResponse
         {
             BidId = newBidId,
@@ -252,4 +253,48 @@ public class BidRepository
             PlacedAt = DateTime.Now
         };
     }
+
+    // Get bid history for a specific lot.
+    public async Task<List<BidResponse>> GetBidHistoryAsync(int lotId)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        const string sql = """
+            SELECT
+                b.bid_id,
+                b.lot_id,
+                b.bidder_id,
+                u.full_name AS bidder_name,
+                b.amount,
+                b.placed_at
+            FROM bids b
+            INNER JOIN users u ON u.user_id = b.bidder_id
+            WHERE b.lot_id = @lotId
+            ORDER BY b.placed_at DESC, b.bid_id DESC;
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@lotId", lotId);
+
+        var bids = new List<BidResponse>();
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            bids.Add(new BidResponse
+            {
+                BidId = reader.GetInt32("bid_id"),
+                LotId = reader.GetInt32("lot_id"),
+                BidderId = reader.GetInt32("bidder_id"),
+                BidderName = reader.GetString("bidder_name"),
+                Amount = reader.GetDecimal("amount"),
+                PlacedAt = reader.GetDateTime("placed_at")
+            });
+        }
+
+        return bids;
+    }
 }
+

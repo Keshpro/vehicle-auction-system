@@ -18,6 +18,19 @@ public class BidsController : ControllerBase
     {
         _bidService = bidService;
     }
+    [HttpGet]
+    public async Task<IActionResult> GetBidHistory(int lotId)
+    {
+        try
+        {
+            var result = await _bidService.GetBidHistoryAsync(lotId);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPost]
     public async Task<IActionResult> PlaceBid(
