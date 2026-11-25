@@ -1,4 +1,4 @@
-import { BadgeCheck, UsersRound } from "lucide-react";
+import { BadgeCheck, ClipboardList, FileBarChart, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const adminPages = [
@@ -15,6 +15,20 @@ const adminPages = [
     description: "Review and approve pending bidders.",
     buttonLabel: "Review Bidders",
     Icon: BadgeCheck,
+  },
+  {
+    path: "/admin/reports",
+    title: "Reports Dashboard",
+    description: "Track auction results, bidding activity, and sales.",
+    buttonLabel: "View Reports",
+    Icon: FileBarChart,
+  },
+  {
+    path: "/admin/audit-logs",
+    title: "Audit Logs",
+    description: "Search and filter recorded auction system activity.",
+    buttonLabel: "View Audit Logs",
+    Icon: ClipboardList,
   },
 ];
 

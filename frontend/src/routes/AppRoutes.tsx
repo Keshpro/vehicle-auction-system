@@ -10,6 +10,8 @@ import BidderApproval from "../BidderApproval";
 import AdminDashboard from "../pages/AdminDashboard";
 import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
+import ReportsDashboard from "../features/reporting/pages/ReportsDashboard";
+import AuditLogsPage from "../features/reporting/pages/AuditLogsPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -19,6 +21,8 @@ export default function AppRoutes() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="bidders" element={<BidderApproval />} />
+          <Route path="reports" element={<ReportsDashboard />} />
+          <Route path="audit-logs" element={<AuditLogsPage />} />
         </Route>
 
         {/* Live Auction Page */}
