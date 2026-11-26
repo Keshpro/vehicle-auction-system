@@ -21,6 +21,7 @@ export default function AppRoutes() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="bidders" element={<BidderApproval />} />
+          <Route path="auctions" element={<AuctionListPage />} />
         </Route>
 
         {/* Real Auction Listing and Bid Management */}
