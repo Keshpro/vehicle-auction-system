@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VehicleAuction.Api.Services;
 using MySqlConnector;
@@ -29,12 +31,19 @@ public class AuctionsController : ControllerBase
             return NotFound(new { message = $"Auction {id} not found." });
         return Ok(details);
     }
+    private bool TryGetCurrentUserId(out int userId) =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+
         [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] DTOs.CreateAuctionRequest request)
     {
+        if (!TryGetCurrentUserId(out var adminId))
+            return Unauthorized(new { message = "Unable to identify the logged-in admin." });
+
         try
         {
-            var newId = await _service.CreateAuctionAsync(request);
+            var newId = await _service.CreateAuctionAsync(request, adminId);
             var created = await _service.GetAuctionAsync(newId);
             return CreatedAtAction(nameof(GetById), new { id = newId }, created);
         }
@@ -44,11 +53,15 @@ public class AuctionsController : ControllerBase
         }
     }
         [HttpPost("{id:int}/publish")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Publish(int id)
     {
+        if (!TryGetCurrentUserId(out var adminId))
+            return Unauthorized(new { message = "Unable to identify the logged-in admin." });
+
         try
         {
-            await _service.PublishAuctionAsync(id);
+            await _service.PublishAuctionAsync(id, adminId);
             var updated = await _service.GetAuctionAsync(id);
             return Ok(updated);
         }
@@ -61,11 +74,15 @@ public class AuctionsController : ControllerBase
         }
     }
     [HttpPost("{id:int}/cancel")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Cancel(int id)
     {
+        if (!TryGetCurrentUserId(out var adminId))
+            return Unauthorized(new { message = "Unable to identify the logged-in admin." });
+
         try
         {
-            await _service.CancelAuctionAsync(id);
+            await _service.CancelAuctionAsync(id, adminId);
             var updated = await _service.GetAuctionAsync(id);
             return Ok(updated);
         }

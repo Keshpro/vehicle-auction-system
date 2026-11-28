@@ -21,25 +21,22 @@ public class AuctionService
     {
         return _repository.GetByIdAsync(id);
     }
-        public async Task<int> CreateAuctionAsync(DTOs.CreateAuctionRequest request)
+        public async Task<int> CreateAuctionAsync(DTOs.CreateAuctionRequest request, int adminUserId)
     {
         if (request.EndsAt <= request.StartsAt)
             throw new ArgumentException("EndsAt must be later than StartsAt.");
 
-        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
         return await _repository.CreateAsync(
             request.Title.Trim(), request.Description,
-            request.StartsAt, request.EndsAt, demoAdminId);
+            request.StartsAt, request.EndsAt, adminUserId);
     }
-        public async Task PublishAuctionAsync(int id)
+        public async Task PublishAuctionAsync(int id, int adminUserId)
     {
-        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
-        await _repository.PublishAsync(id, demoAdminId);
+        await _repository.PublishAsync(id, adminUserId);
     }
-    public async Task CancelAuctionAsync(int id)
+    public async Task CancelAuctionAsync(int id, int adminUserId)
     {
-        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
-        await _repository.CancelAsync(id, demoAdminId);
+        await _repository.CancelAsync(id, adminUserId);
     }
    public Task<AuctionReport?> GetReportAsync(int id) => _repository.GetReportAsync(id);
     
