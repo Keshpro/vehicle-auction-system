@@ -31,7 +31,18 @@ export default function CreateAuctionPage() {
     }
   };
 
-  const field = { display: 'block', width: '100%', padding: 8, marginTop: 4, marginBottom: 16 };
+const field = {
+  display: 'block',
+  width: '100%',
+  padding: 10,
+  marginTop: 4,
+  marginBottom: 16,
+  border: '1px solid #bbb',
+  borderRadius: 6,
+  background: '#fff',
+  boxSizing: 'border-box' as const,
+};
+
 
   return (
     <div style={{ padding: 24, maxWidth: 560 }}>
