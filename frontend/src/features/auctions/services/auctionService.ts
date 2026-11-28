@@ -36,3 +36,16 @@ export async function createAuction(input: CreateAuctionInput): Promise<Auction>
   }
   return res.json();
 }
+export async function publishAuction(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/auctions/${id}/publish`, { method: 'POST' });
+  if (!res.ok) {
+    let msg = `Failed to publish auction (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data?.message) msg = data.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+}
