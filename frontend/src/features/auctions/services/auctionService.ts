@@ -6,7 +6,7 @@ export async function getAuctions(status?: string): Promise<Auction[]> {
   const url = status
     ? `${API_BASE}/auctions?status=${encodeURIComponent(status)}`
     : `${API_BASE}/auctions`;
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error(`Failed to load auctions (${res.status})`);
   return res.json();
 }
@@ -20,6 +20,7 @@ export interface CreateAuctionInput {
 export async function createAuction(input: CreateAuctionInput): Promise<Auction> {
   const res = await fetch(`${API_BASE}/auctions`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   });
@@ -37,7 +38,10 @@ export async function createAuction(input: CreateAuctionInput): Promise<Auction>
   return res.json();
 }
 export async function publishAuction(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/auctions/${id}/publish`, { method: 'POST' });
+  const res = await fetch(`${API_BASE}/auctions/${id}/publish`, {
+    method: 'POST',
+    credentials: 'include',
+  });
   if (!res.ok) {
     let msg = `Failed to publish auction (${res.status})`;
     try {
@@ -50,7 +54,10 @@ export async function publishAuction(id: number): Promise<void> {
   }
 }
 export async function cancelAuction(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/auctions/${id}/cancel`, { method: 'POST' });
+  const res = await fetch(`${API_BASE}/auctions/${id}/cancel`, {
+    method: 'POST',
+    credentials: 'include',
+  });
   if (!res.ok) {
     let msg = `Failed to cancel auction (${res.status})`;
     try {
