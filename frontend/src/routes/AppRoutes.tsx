@@ -13,6 +13,7 @@ import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
 import BidAuctionPage from "../features/bidding/pages/BidAuctionPage";
 import CreateAuctionPage from "../features/auctions/pages/CreateAuctionPage";
+import AuctionDetailsPage from "../features/auctions/pages/AuctionDetailsPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -24,6 +25,7 @@ export default function AppRoutes() {
           <Route path="bidders" element={<BidderApproval />} />
           <Route path="auctions" element={<AuctionListPage />} />
           <Route path="auctions/new" element={<CreateAuctionPage />} />
+          <Route path="auctions/:id" element={<AuctionDetailsPage />} />
         </Route>
 
         {/* Real Auction Listing and Bid Management */}

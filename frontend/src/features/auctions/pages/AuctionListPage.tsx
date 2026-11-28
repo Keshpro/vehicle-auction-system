@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { Auction } from '../types/auction.types';
 import { cancelAuction, getAuctions, publishAuction } from '../services/auctionService';
 
@@ -12,6 +12,7 @@ export default function AuctionListPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const isAdmin = useLocation().pathname.startsWith('/admin');
 
   useEffect(() => {
     setLoading(true);
@@ -98,7 +99,7 @@ export default function AuctionListPage() {
                 <td style={cell}>{a.auctionId}</td>
                 <td style={cell}>
                   <Link
-                    to={`/auctions/${a.auctionId}`}
+                    to={isAdmin ? `/admin/auctions/${a.auctionId}` : `/auctions/${a.auctionId}`}
                     style={{ color: '#dc2626', fontWeight: 600 }}
                   >
                     {a.title} → View Auction

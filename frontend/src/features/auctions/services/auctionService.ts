@@ -1,4 +1,4 @@
-import type { Auction } from '../types/auction.types';
+import type { Auction, AuctionReport } from '../types/auction.types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api';
 
@@ -8,6 +8,19 @@ export async function getAuctions(status?: string): Promise<Auction[]> {
     : `${API_BASE}/auctions`;
   const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error(`Failed to load auctions (${res.status})`);
+  return res.json();
+}
+// Returns null when the auction does not exist (404).
+export async function getAuction(id: number): Promise<Auction | null> {
+  const res = await fetch(`${API_BASE}/auctions/${id}`, { credentials: 'include' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load auction (${res.status})`);
+  const data: { auction: Auction } = await res.json();
+  return data.auction;
+}
+export async function getAuctionReport(id: number): Promise<AuctionReport> {
+  const res = await fetch(`${API_BASE}/auctions/${id}/report`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to load lot summary (${res.status})`);
   return res.json();
 }
 export interface CreateAuctionInput {
