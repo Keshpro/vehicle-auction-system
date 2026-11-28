@@ -23,11 +23,20 @@ public class AuctionService
     }
         public async Task<int> CreateAuctionAsync(DTOs.CreateAuctionRequest request, int adminUserId)
     {
+        var title = request.Title?.Trim() ?? string.Empty;
+        if (title.Length == 0)
+            throw new ArgumentException("Title is required.");
+        if (title.Length > 150)
+            throw new ArgumentException("Title must be at most 150 characters.");
+
+        if (request.StartsAt < DateTime.Now)
+            throw new ArgumentException("StartsAt cannot be in the past.");
+
         if (request.EndsAt <= request.StartsAt)
             throw new ArgumentException("EndsAt must be later than StartsAt.");
 
         return await _repository.CreateAsync(
-            request.Title.Trim(), request.Description,
+            title, request.Description,
             request.StartsAt, request.EndsAt, adminUserId);
     }
         public async Task PublishAuctionAsync(int id, int adminUserId)
