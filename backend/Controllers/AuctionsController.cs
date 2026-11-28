@@ -60,4 +60,12 @@ public class AuctionsController : ControllerBase
             return BadRequest(new { message });
         }
     }
+    [HttpGet("{id:int}/report")]
+public async Task<IActionResult> GetReport(int id)
+{
+    var report = await _service.GetReportAsync(id);
+    return report is null
+        ? NotFound(new { message = $"Auction {id} not found." })
+        : Ok(report);
+}
 }

@@ -6,6 +6,7 @@ namespace VehicleAuction.Api.Services;
 public class AuctionService
 {
     private readonly AuctionRepository _repository;
+    
 
     public AuctionService(AuctionRepository repository)
     {
@@ -35,4 +36,6 @@ public class AuctionService
         const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
         await _repository.PublishAsync(id, demoAdminId);
     }
+   public Task<AuctionReport?> GetReportAsync(int id) => _repository.GetReportAsync(id);
+    
 }

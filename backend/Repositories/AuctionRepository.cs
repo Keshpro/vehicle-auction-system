@@ -151,4 +151,27 @@ public class AuctionRepository
 
         await cmd.ExecuteNonQueryAsync();
     }
+    public async Task<AuctionReport?> GetReportAsync(int auctionId)
+{
+    await using var conn = new MySqlConnection(_connectionString);
+    await conn.OpenAsync();
+    await using var cmd = new MySqlCommand("sp_auction_lot_report", conn)
+    {
+        CommandType = System.Data.CommandType.StoredProcedure
+    };
+    cmd.Parameters.AddWithValue("p_auction_id", auctionId);
+
+    await using var r = await cmd.ExecuteReaderAsync();
+    if (!await r.ReadAsync()) return null;
+    return new AuctionReport
+    {
+        AuctionId = r.GetInt32("auction_id"),
+        TotalLots = r.GetInt32("total_lots"),
+        Scheduled = r.GetInt32("scheduled"),
+        OpenLots = r.GetInt32("open_lots"),
+        Closed = r.GetInt32("closed"),
+        Withdrawn = r.GetInt32("withdrawn"),
+        TotalStartingPrice = r.GetDecimal("total_starting_price")
+    };
+}
 }
