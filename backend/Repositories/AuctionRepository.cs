@@ -151,6 +151,20 @@ public class AuctionRepository
 
         await cmd.ExecuteNonQueryAsync();
     }
+    public async Task CancelAsync(int auctionId, int actorUserId)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        await using var cmd = new MySqlCommand("sp_cancel_auction", connection)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("p_auction_id", auctionId);
+        cmd.Parameters.AddWithValue("p_actor", actorUserId);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
     public async Task<AuctionReport?> GetReportAsync(int auctionId)
 {
     await using var conn = new MySqlConnection(_connectionString);

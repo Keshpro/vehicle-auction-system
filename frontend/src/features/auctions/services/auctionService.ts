@@ -49,3 +49,16 @@ export async function publishAuction(id: number): Promise<void> {
     throw new Error(msg);
   }
 }
+export async function cancelAuction(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/auctions/${id}/cancel`, { method: 'POST' });
+  if (!res.ok) {
+    let msg = `Failed to cancel auction (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data?.message) msg = data.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+}

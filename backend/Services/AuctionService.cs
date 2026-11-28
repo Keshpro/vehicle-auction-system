@@ -36,6 +36,11 @@ public class AuctionService
         const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
         await _repository.PublishAsync(id, demoAdminId);
     }
+    public async Task CancelAuctionAsync(int id)
+    {
+        const int demoAdminId = 1; // TODO: replace with logged-in user (Pair 01 auth)
+        await _repository.CancelAsync(id, demoAdminId);
+    }
    public Task<AuctionReport?> GetReportAsync(int id) => _repository.GetReportAsync(id);
     
 }

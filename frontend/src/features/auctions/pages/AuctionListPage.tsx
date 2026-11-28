@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Auction } from '../types/auction.types';
-import { getAuctions, publishAuction } from '../services/auctionService';
+import { cancelAuction, getAuctions, publishAuction } from '../services/auctionService';
 
 const STATUSES = ['', 'Draft', 'Scheduled', 'Live', 'Closed', 'Cancelled'];
 
@@ -27,6 +27,20 @@ export default function AuctionListPage() {
     setError(null);
     try {
       await publishAuction(id);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onCancel = async (a: Auction) => {
+    if (!window.confirm(`Cancel auction "${a.title}"? This cannot be undone.`)) return;
+    setBusyId(a.auctionId);
+    setError(null);
+    try {
+      await cancelAuction(a.auctionId);
       setReloadKey((k) => k + 1);
     } catch (e) {
       setError((e as Error).message);
@@ -97,6 +111,15 @@ export default function AuctionListPage() {
                   {a.status === 'Draft' && (
                     <button style={btn} disabled={busyId === a.auctionId} onClick={() => onPublish(a.auctionId)}>
                       {busyId === a.auctionId ? 'Publishing...' : 'Publish'}
+                    </button>
+                  )}
+                  {(a.status === 'Draft' || a.status === 'Scheduled') && (
+                    <button
+                      style={{ ...btn, marginLeft: 8, color: '#dc2626', borderColor: '#dc2626' }}
+                      disabled={busyId === a.auctionId}
+                      onClick={() => onCancel(a)}
+                    >
+                      {busyId === a.auctionId ? 'Working...' : 'Cancel'}
                     </button>
                   )}
                 </td>

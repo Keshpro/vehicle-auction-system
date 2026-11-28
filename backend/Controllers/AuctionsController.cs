@@ -60,6 +60,23 @@ public class AuctionsController : ControllerBase
             return BadRequest(new { message });
         }
     }
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        try
+        {
+            await _service.CancelAuctionAsync(id);
+            var updated = await _service.GetAuctionAsync(id);
+            return Ok(updated);
+        }
+        catch (MySqlConnector.MySqlException ex) when (ex.SqlState == "45000")
+        {
+            var message = ex.Message;
+            if (message.Contains("not found"))
+                return NotFound(new { message });
+            return BadRequest(new { message });
+        }
+    }
     [HttpGet("{id:int}/report")]
 public async Task<IActionResult> GetReport(int id)
 {
