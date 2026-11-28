@@ -12,6 +12,7 @@ import AdminDashboard from "../pages/AdminDashboard";
 import AdminRoutes from "./AdminRoutes";
 import LoginPage from "../features/auth/pages/LoginPage";
 import BidAuctionPage from "../features/bidding/pages/BidAuctionPage";
+import CreateAuctionPage from "../features/auctions/pages/CreateAuctionPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -22,6 +23,7 @@ export default function AppRoutes() {
           <Route path="users" element={<UserManagement />} />
           <Route path="bidders" element={<BidderApproval />} />
           <Route path="auctions" element={<AuctionListPage />} />
+          <Route path="auctions/new" element={<CreateAuctionPage />} />
         </Route>
 
         {/* Real Auction Listing and Bid Management */}

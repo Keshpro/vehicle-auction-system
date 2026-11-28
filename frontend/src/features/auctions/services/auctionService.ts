@@ -10,3 +10,29 @@ export async function getAuctions(status?: string): Promise<Auction[]> {
   if (!res.ok) throw new Error(`Failed to load auctions (${res.status})`);
   return res.json();
 }
+export interface CreateAuctionInput {
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export async function createAuction(input: CreateAuctionInput): Promise<Auction> {
+  const res = await fetch(`${API_BASE}/auctions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    let msg = `Failed to create auction (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data?.message) msg = data.message;
+      else if (data?.errors) msg = Object.values(data.errors).flat().join(' ');
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}
